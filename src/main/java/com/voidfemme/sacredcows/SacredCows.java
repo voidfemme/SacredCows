@@ -4,16 +4,10 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LightningEntity;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.ScoreboardCriterion;
 import net.minecraft.scoreboard.ScoreboardObjective;
@@ -26,11 +20,9 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 public class SacredCows implements ModInitializer {
     public static final String MOD_ID = "sacredcows";
@@ -86,6 +77,19 @@ public class SacredCows implements ModInitializer {
             this.server = server;
             setupScoreboard();
             startCleanupTask();
+        });
+
+        // In your SacredCows.java onInitialize() method, add:
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
+            if (entity instanceof ServerPlayerEntity player) {
+                if (getConfig().isCustomDeathMessagesEnabled()) {
+                    String customMessage = getPendingDeathMessage(player.getUuid());
+                    if (customMessage != null) {
+                        player.getServer().getPlayerManager().broadcast(
+                                Text.literal(customMessage), false);
+                    }
+                }
+            }
         });
 
         LOGGER.info("SacredCows mod initialized!");
