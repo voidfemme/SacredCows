@@ -263,6 +263,8 @@ public class SacredCows implements ModInitializer {
                 Vec3d pos = player.getPos();
                 LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, player.getWorld());
                 lightning.setPosition(pos);
+                // Make it cosmetic only - otherwise the cow dies too and that's not good praxis
+                lightning.setCosmetic(true);
                 player.getWorld().spawnEntity(lightning);
             } catch (Exception e) {
                 LOGGER.warn("Failed to create lightning effect: {}", e.getMessage());

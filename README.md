@@ -130,7 +130,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE)
+This project is in the public domain (CC0-1.0)
 
 ## Support
 
