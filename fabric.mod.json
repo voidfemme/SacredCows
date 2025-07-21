@@ -1,0 +1,33 @@
+{
+    "schemaVersion": 1,
+    "id": "sacredcows",
+    "version": "1.2.1",
+    "name": "sacredcows",
+    "description": "A mod that punishes players for harming cows",
+    "authors": [
+        "voidfemme"
+    ],
+    "contact": {
+        "homepage": "https://github.com/voidfemme/sacredcows",
+        "sources": "https://github.com/voidfemme/sacredcows"
+    },
+    "license": "CC0-1.0",
+    "icon": "assets/sacredcows/icon.png",
+    "environment": "server",
+    "entrypoints": {
+        "main": [
+            "com.voidfemme.sacredcows.sacredcows"
+        ]
+    },
+    "mixins": [
+        "sacredcows.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.16.9",
+        "fabric-api": "*",
+        "minecraft": "~1.21.7"
+    },
+    "suggests": {
+        "another-mod": "*"
+    }
+}

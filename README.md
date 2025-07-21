@@ -1,6 +1,6 @@
-# CowMurder
+# SacredCows Fabric Mod
 
-CowMurder is a highly configurable Minecraft plugin that adds a humorous twist to cow interactions. It punishes players for harming cows with customizable consequences and keeps detailed statistics of cow-related offenses.
+SacredCows is a highly configurable Minecraft plugin that adds a humorous twist to cow interactions. It punishes players for harming cows with customizable consequences and keeps detailed statistics of cow-related offenses.
 
 ## Features
 
@@ -25,11 +25,11 @@ CowMurder is a highly configurable Minecraft plugin that adds a humorous twist t
 ## Installation
 
 1. Ensure you have a Spigot or Paper Minecraft server (version 1.21.7 or compatible) set up.
-2. Download the latest `CowMurder.jar` from the [releases section](https://github.com/voidfemme/cow_murder/releases).
+2. Download the latest `SacredCows.jar` from the [releases section](https://github.com/voidfemme/cow_murder/releases).
 3. Place the JAR file in your server's `plugins` folder.
 4. Restart your server.
-5. Edit `plugins/CowMurder/config.yml` to customize settings (optional).
-6. Use `/cowmurder reload` to apply configuration changes without restarting.
+5. Edit `plugins/SacredCows/config.yml` to customize settings (optional).
+6. Use `/sacredcows reload` to apply configuration changes without restarting.
 
 ## Building from Source
 
@@ -53,16 +53,16 @@ The plugin works automatically once installed. Players will be punished for harm
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/cowmurder` | Show plugin info and help | `cowmurder.admin` |
-| `/cowmurder reload` | Reload configuration file | `cowmurder.admin` |
-| `/cowmurder stats <player>` | View player's cow-related statistics | `cowmurder.admin` |
+| `/sacredcows` | Show plugin info and help | `sacredcows.admin` |
+| `/sacredcows reload` | Reload configuration file | `sacredcows.admin` |
+| `/sacredcows stats <player>` | View player's cow-related statistics | `sacredcows.admin` |
 
 ## Permissions
 
 | Permission | Description | Default |
 |------------|-------------|---------|
-| `cowmurder.bypass` | Bypass cow protection (can harm cows) | `op` |
-| `cowmurder.admin` | Access to admin commands | `op` |
+| `sacredcows.bypass` | Bypass cow protection (can harm cows) | `op` |
+| `sacredcows.admin` | Access to admin commands | `op` |
 
 ## Configuration
 

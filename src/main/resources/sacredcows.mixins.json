@@ -1,0 +1,15 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.voidfemme.sacredcows.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "refmap": "sacredcows.refmap.json",
+    "mixins": [],
+    "client": [],
+    "server": [
+        "PlayerEntityMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}
