@@ -8,6 +8,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LightningEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.ScoreboardCriterion;
 import net.minecraft.scoreboard.ScoreboardObjective;
@@ -162,9 +163,32 @@ public class SacredCows implements ModInitializer {
     }
 
     private ServerPlayerEntity getPlayerFromDamageSource(DamageSource source) {
+        // Direct player damage
         if (source.getAttacker() instanceof ServerPlayerEntity) {
             return (ServerPlayerEntity) source.getAttacker();
         }
+
+        // Projectile damage - check if the projectile was shot by a player
+        if (source.getSource() != null) {
+            Entity projectile = source.getSource();
+
+            // Check if it's a projectile entity with an owner
+            if (projectile instanceof net.minecraft.entity.projectile.ProjectileEntity) {
+                net.minecraft.entity.projectile.ProjectileEntity proj = (net.minecraft.entity.projectile.ProjectileEntity) projectile;
+                if (proj.getOwner() instanceof ServerPlayerEntity) {
+                    return (ServerPlayerEntity) proj.getOwner();
+                }
+            }
+
+            // Some projectiles might extend different classes, check for Ownable interface
+            if (projectile instanceof net.minecraft.entity.Ownable) {
+                net.minecraft.entity.Ownable ownable = (net.minecraft.entity.Ownable) projectile;
+                if (ownable.getOwner() instanceof ServerPlayerEntity) {
+                    return (ServerPlayerEntity) ownable.getOwner();
+                }
+            }
+        }
+
         return null;
     }
 
@@ -382,7 +406,7 @@ public class SacredCows implements ModInitializer {
 
     private int executeMainCommand(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        source.sendFeedback(() -> Text.literal("§6SacredCows v1.2.1"), false);
+        source.sendFeedback(() -> Text.literal("§6SacredCows v2.0.0"), false);
         source.sendFeedback(() -> Text.literal("Usage: /sacredcows [reload|stats <player>]").formatted(Formatting.GOLD),
                 false);
         return 1;

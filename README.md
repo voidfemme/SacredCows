@@ -1,6 +1,6 @@
 # SacredCows Fabric Mod
 
-SacredCows is a highly configurable Minecraft plugin that adds a humorous twist to cow interactions. It punishes players for harming cows with customizable consequences and keeps detailed statistics of cow-related offenses.
+SacredCows is a configurable Minecraft Fabric mod that adds a humorous twist to cow interactions. It punishes players for harming cows with customizable consequences and keeps detailed statistics of cow-related offenses.
 
 ## Features
 
@@ -9,9 +9,10 @@ SacredCows is a highly configurable Minecraft plugin that adds a humorous twist 
 - **Custom Death Messages**: Fully customizable humorous death messages with player placeholders
 - **Lightning Effects**: Dramatic visual lightning strikes (cosmetic only - won't harm cows)
 - **Scoreboard Tracking**: Comprehensive tracking of cow assaults and kills
+- **Projectile Protection**: Prevents cow damage from arrows, snowballs, and other player projectiles
 
 ### Administrative Features
-- **Permission System**: Bypass protection for admins and trusted players
+- **Permission System**: Bypass protection for server operators
 - **Admin Commands**: Reload configuration and view player statistics
 - **Comprehensive Logging**: Debug mode for troubleshooting
 - **Error Handling**: Robust error handling with informative logging
@@ -24,16 +25,16 @@ SacredCows is a highly configurable Minecraft plugin that adds a humorous twist 
 
 ## Installation
 
-1. Ensure you have a Spigot or Paper Minecraft server (version 1.21.7 or compatible) set up.
-2. Download the latest `SacredCows.jar` from the [releases section](https://github.com/voidfemme/cow_murder/releases).
-3. Place the JAR file in your server's `plugins` folder.
+1. Ensure you have a Fabric Minecraft server (version 1.21.7) set up with Fabric API installed.
+2. Download the latest `sacredcows-2.0.0.jar` from the [releases section](https://github.com/voidfemme/sacredcows/releases).
+3. Place the JAR file in your server's `mods` folder.
 4. Restart your server.
-5. Edit `plugins/SacredCows/config.yml` to customize settings (optional).
+5. Edit `config/sacredcows.properties` to customize settings (optional).
 6. Use `/sacredcows reload` to apply configuration changes without restarting.
 
 ## Building from Source
 
-To build the plugin from source:
+To build the mod from source:
 1. Ensure you have Java 21 and Gradle installed.
 2. Clone this repository.
 3. Run `./gradlew clean build` in the project root directory.
@@ -41,11 +42,11 @@ To build the plugin from source:
 
 ## Usage
 
-The plugin works automatically once installed. Players will be punished for harming cows according to your configuration settings, and their offenses will be tracked on the scoreboard.
+The mod works automatically once installed. Players will be punished for harming cows according to your configuration settings, and their offenses will be tracked on the scoreboard.
 
 ### Default Behavior
-- Players who hit cows are instantly killed
-- Lightning effect appears at punishment location
+- Players who hit cows (directly or with projectiles) are instantly killed
+- Lightning effect appears at punishment location (cosmetic only)
 - Custom death messages are broadcast
 - Statistics are tracked on server scoreboard
 
@@ -53,76 +54,107 @@ The plugin works automatically once installed. Players will be punished for harm
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/sacredcows` | Show plugin info and help | `sacredcows.admin` |
-| `/sacredcows reload` | Reload configuration file | `sacredcows.admin` |
-| `/sacredcows stats <player>` | View player's cow-related statistics | `sacredcows.admin` |
+| `/sacredcows` | Show mod info and help | Server operator |
+| `/sacredcows reload` | Reload configuration file | Server operator |
+| `/sacredcows stats <player>` | View player's cow-related statistics | Server operator |
 
 ## Permissions
 
+Since Fabric doesn't have a built-in permission system, SacredCows uses operator status:
+
 | Permission | Description | Default |
 |------------|-------------|---------|
-| `sacredcows.bypass` | Bypass cow protection (can harm cows) | `op` |
-| `sacredcows.admin` | Access to admin commands | `op` |
+| Server Operator | Bypass cow protection and access admin commands | Manual OP assignment |
 
 ## Configuration
 
-The plugin creates a comprehensive `config.yml` file with the following options:
+The mod creates a `config/sacredcows.properties` file with the following options:
 
-### Punishment Settings
-```yaml
-settings:
-  punishment-type: DEATH        # DEATH, DAMAGE, or LIGHTNING_ONLY
-  damage-amount: 10.0          # If using DAMAGE type
-  lightning-effect: true       # Enable lightning visual effect
-  custom-death-messages: true  # Use custom death messages
+### General Settings
+```properties
+# Enable/disable the mod functionality
+settings.enabled=true
+
+# Enable debug logging
+settings.debug=false
+
+# Punishment type: DEATH, DAMAGE, LIGHTNING_ONLY
+settings.punishment-type=DEATH
+
+# Amount of damage to deal if punishment-type is DAMAGE
+settings.damage-amount=10.0
+
+# Enable lightning effect when punishing
+settings.lightning-effect=true
+
+# Enable custom death messages
+settings.custom-death-messages=true
+```
+
+### Scoreboard Settings
+```properties
+# Enable scoreboard tracking
+scoreboard.enabled=true
+
+# Track cow assaults (damage events)
+scoreboard.track-assaults=true
+
+# Track cow kills (death events)
+scoreboard.track-kills=true
+
+# Objective and display names
+scoreboard.assault-objective=cowAssaults
+scoreboard.kill-objective=cowKills
+scoreboard.assault-display=Cow Assaults
+scoreboard.kill-display=Cow Kills
 ```
 
 ### Death Messages
-```yaml
-death-messages:
-  - "%player% was moo-rdered for their bovine crimes"
-  - "%player% faced divine bovine retribution"
-  # Add more custom messages...
+```properties
+# Custom death messages (use %player% as placeholder)
+death-messages.0=%player% was moo-rdered for their bovine crimes
+death-messages.1=%player% faced divine bovine retribution
+death-messages.2=The cows fought back, and %player% lost
+death-messages.3=%player% learned the hard way not to mess with cows
+death-messages.4=A mysterious force struck down %player% for harming a cow
 ```
 
-### Scoreboard Options
-```yaml
-scoreboard:
-  enabled: true           # Enable scoreboard tracking
-  track-assaults: true    # Track cow damage events
-  track-kills: true       # Track cow death events
+### Permissions
+```properties
+# Permission strings (used with operator status)
+permissions.bypass-permission=sacredcows.bypass
+permissions.admin-permission=sacredcows.admin
 ```
-
-### Debug and Logging
-```yaml
-settings:
-  debug: false           # Enable detailed console logging
-  enabled: true          # Master enable/disable switch
-```
-
-For complete configuration options, see the generated `config.yml` file.
 
 ## Compatibility
 
 - **Minecraft Version**: 1.21.7
-- **Server Software**: Spigot, Paper, and derivatives
+- **Server Software**: Fabric Server with Fabric API
 - **Java Version**: 21 or higher
 
 ## Recent Updates
 
-### Version 1.2.0 (Latest)
-- **Minecraft 1.21.7 Support**: Updated for the latest Minecraft version
-- **Paper API Migration**: Migrated from Spigot to Paper API for better performance
-- **Modern Messaging**: Updated to Adventure Component API for rich text support
-- **Build System Modernization**: Updated Gradle, Shadow plugin, and dependencies
-- **Mojang Mappings**: Added support for official Mojang mappings
-- **Enhanced Compatibility**: Future-proofed for upcoming Minecraft versions
+### Version 2.0.0 (Latest)
+- **Complete Fabric Migration**: Converted from Bukkit plugin to Fabric mod
+- **Event System Rewrite**: Replaced Mixins with Fabric's event API for better stability
+- **Enhanced Projectile Detection**: Now protects cows from arrows and other player projectiles
+- **Cosmetic Lightning**: Lightning effects no longer harm cows (good praxis!)
+- **Properties Configuration**: Switched from YAML to Java Properties format
+- **License Change**: Released into public domain (CC0-1.0)
+- **Command Updates**: Changed from `/cowmurder` to `/sacredcows`
 
 ### Previous Versions
-- **Version 1.1.0**: Complete rewrite with configuration system, permission
-system, admin commands, enhanced logging, configurable punishment, memory leak
-fixes, and Minecraft 1.21.4 support
-- Version 1.0.3: Updated for Minecraft 1.21.1 compatibility
+- **Version 1.2.0**: Minecraft 1.21.7 support with Paper API migration
+- **Version 1.1.0**: Complete rewrite with configuration system and enhanced features
+- **Version 1.0.3**: Updated for Minecraft 1.21.1 compatibility
+
+## Technical Details
+
+SacredCows uses Fabric's event system for reliable cow protection:
+- `ServerLivingEntityEvents.ALLOW_DAMAGE` for preventing cow damage
+- `ServerLivingEntityEvents.AFTER_DEATH` for tracking kills and custom death messages
+- Proper projectile source detection for comprehensive protection
+- Scoreboard integration using Minecraft's native scoreboard system
 
 ## Contributing
 
@@ -130,7 +162,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is in the public domain (CC0-1.0)
+This project is in the public domain under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 ## Support
 
@@ -138,4 +170,4 @@ For support, please open an issue on the GitHub repository.
 
 ## Disclaimer
 
-Use this plugin at your own risk. The author is not responsible for any damage to your server, player frustration, or the inevitable cow uprising that may result from their newfound invincibility. Cows, on the other hand, may send thank-you notes.
+Use this mod at your own risk. The author is not responsible for any damage to your server, player frustration, or the inevitable cow uprising that may result from their newfound invincibility. Cows, on the other hand, may send thank-you notes.
