@@ -16,6 +16,7 @@ public class SacredCowsConfig {
     private double damageAmount = 10.0;
     private boolean lightningEffectEnabled = true;
     private boolean customDeathMessagesEnabled = true;
+    private boolean allowBypass = true;
 
     // Scoreboard settings
     private boolean scoreboardEnabled = true;
@@ -88,6 +89,7 @@ public class SacredCowsConfig {
         properties.setProperty("settings.damage-amount", "10.0");
         properties.setProperty("settings.lightning-effect", "true");
         properties.setProperty("settings.custom-death-messages", "true");
+        properties.setProperty("settings.allow-bypass", "true");
 
         // Scoreboard Settings
         properties.setProperty("scoreboard.enabled", "true");
@@ -117,6 +119,7 @@ public class SacredCowsConfig {
         lightningEffectEnabled = Boolean.parseBoolean(properties.getProperty("settings.lightning-effect", "true"));
         customDeathMessagesEnabled = Boolean
                 .parseBoolean(properties.getProperty("settings.custom-death-messages", "true"));
+        allowBypass = Boolean.parseBoolean(properties.getProperty("settings.allow-bypass", "true"));
 
         // Scoreboard settings
         scoreboardEnabled = Boolean.parseBoolean(properties.getProperty("scoreboard.enabled", "true"));
@@ -188,6 +191,10 @@ public class SacredCowsConfig {
 
     public boolean isTrackKillsEnabled() {
         return trackKillsEnabled;
+    }
+
+    public boolean isAllowBypass() {
+        return allowBypass;
     }
 
     public String getAssaultObjective() {

@@ -26,7 +26,7 @@ SacredCows is a configurable Minecraft Fabric mod that adds a humorous twist to 
 ## Installation
 
 1. Ensure you have a Fabric Minecraft server (version 1.21.7) set up with Fabric API installed.
-2. Download the latest `sacredcows-2.0.0.jar` from the [releases section](https://github.com/voidfemme/sacredcows/releases).
+2. Download the latest `sacredcows-2.0.1.jar` from the [releases section](https://github.com/voidfemme/sacredcows/releases).
 3. Place the JAR file in your server's `mods` folder.
 4. Restart your server.
 5. Edit `config/sacredcows.properties` to customize settings (optional).
@@ -134,7 +134,12 @@ permissions.admin-permission=sacredcows.admin
 
 ## Recent Updates
 
-### Version 2.0.0 (Latest)
+### Version 2.0.1 (Latest)
+- **Bypass Control**: Added `settings.allow-bypass` config option to disable admin bypass permissions
+- **Permission Flexibility**: Admins can now be subject to cow protection regardless of OP status
+- **Testing Enhancement**: Easier testing without needing to deop administrators
+
+### Version 2.0.0
 - **Complete Fabric Migration**: Converted from Bukkit plugin to Fabric mod
 - **Event System Rewrite**: Replaced Mixins with Fabric's event API for better stability
 - **Enhanced Projectile Detection**: Now protects cows from arrows and other player projectiles

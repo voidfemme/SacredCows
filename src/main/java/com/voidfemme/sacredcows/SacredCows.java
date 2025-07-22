@@ -193,9 +193,12 @@ public class SacredCows implements ModInitializer {
     }
 
     private boolean hasPermission(ServerPlayerEntity player, String permission) {
-        // Fabric doesn't have built-in permissions, so we'll use OP status for
-        // bypass/admin permissions
-        // For bypass permission, check if player is OP
+        // Check if bypass is disabled in config
+        if (permission.equals(config.getBypassPermission()) && !config.isAllowBypass()) {
+            return false;
+        }
+
+        // Otherwise, check for OP status
         if (permission.equals(config.getBypassPermission()) || permission.equals(config.getAdminPermission())) {
             return server.getPlayerManager().isOperator(player.getGameProfile());
         }
@@ -406,7 +409,7 @@ public class SacredCows implements ModInitializer {
 
     private int executeMainCommand(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        source.sendFeedback(() -> Text.literal("§6SacredCows v2.0.0"), false);
+        source.sendFeedback(() -> Text.literal("§6SacredCows v2.0.1"), false);
         source.sendFeedback(() -> Text.literal("Usage: /sacredcows [reload|stats <player>]").formatted(Formatting.GOLD),
                 false);
         return 1;
