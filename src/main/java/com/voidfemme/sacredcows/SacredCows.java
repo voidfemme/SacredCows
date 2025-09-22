@@ -24,11 +24,14 @@ import net.minecraft.util.math.Vec3d;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Properties;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -407,9 +410,19 @@ public class SacredCows implements ModInitializer {
                                 .executes(this::executeStatsCommand))));
     }
 
+    private static String getVersion() {
+        try (InputStream input = SacredCows.class.getResourceAsStream("/version.properties")) {
+            Properties prop = new Properties();
+            prop.load(input);
+            return prop.getProperty("version", "unknown");
+        } catch (IOException e) {
+            return "unknown";
+        }
+    }
+
     private int executeMainCommand(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        source.sendFeedback(() -> Text.literal("§6SacredCows v2.0.1"), false);
+        source.sendFeedback(() -> Text.literal("§6SacredCows v" + getVersion()), false);
         source.sendFeedback(() -> Text.literal("Usage: /sacredcows [reload|stats <player>]").formatted(Formatting.GOLD),
                 false);
         return 1;

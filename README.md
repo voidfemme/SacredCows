@@ -134,6 +134,10 @@ permissions.admin-permission=sacredcows.admin
 
 ## Recent Updates
 
+### License Change
+- Dropped formal licensing - individuals can use freely, corporations can deal with the
+legal uncertainty.
+
 ### Version 2.0.1 (Latest)
 - **Bypass Control**: Added `settings.allow-bypass` config option to disable admin bypass permissions
 - **Permission Flexibility**: Admins can now be subject to cow protection regardless of OP status
@@ -167,7 +171,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is in the public domain under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+I don't believe in intellectual property. This code has no formal license - use it however
+you want. I will never pursue legal action against anyone for any use of this code.
 
 ## Support
 

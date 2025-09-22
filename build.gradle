@@ -40,7 +40,10 @@ dependencies {
 }
 
 processResources {
-    inputs.property "version", version
+    inputs.property "version", project.version
+    filesMatching("version.properties") {
+        expand "version": project.version
+    }
     inputs.property "minecraft_version", minecraft_version
     inputs.property "loader_version", loader_version
     filteringCharset = 'UTF-8'
@@ -72,12 +75,6 @@ java {
     // if it is present.
     // If you remove this line, sources will not be generated.
     withSourcesJar()
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${base.archivesName.get()}"}
-    }
 }
 
 // configure the maven publication

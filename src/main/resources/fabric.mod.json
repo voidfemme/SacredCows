@@ -11,7 +11,6 @@
         "homepage": "https://github.com/voidfemme/sacredcows",
         "sources": "https://github.com/voidfemme/sacredcows"
     },
-    "license": "CC0-1.0",
     "icon": "assets/sacredcows/icon.png",
     "environment": "server",
     "entrypoints": {
