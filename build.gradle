@@ -40,9 +40,9 @@ dependencies {
 }
 
 processResources {
-    inputs.property "version", project.version
+    inputs.property "version", providers.provider { version }
     filesMatching("version.properties") {
-        expand "version": project.version
+        expand(["version": providers.provider { version }.get()])
     }
     inputs.property "minecraft_version", minecraft_version
     inputs.property "loader_version", loader_version

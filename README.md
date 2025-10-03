@@ -1,5 +1,5 @@
 # SacredCows Fabric Mod
-
+![SacredCows Icon](src/main/resources/assets/sacredcows/icon.png)
 SacredCows is a configurable Minecraft Fabric mod that adds a humorous twist to cow interactions. It punishes players for harming cows with customizable consequences and keeps detailed statistics of cow-related offenses.
 
 ## Features
@@ -25,8 +25,8 @@ SacredCows is a configurable Minecraft Fabric mod that adds a humorous twist to 
 
 ## Installation
 
-1. Ensure you have a Fabric Minecraft server (version 1.21.7) set up with Fabric API installed.
-2. Download the latest `sacredcows-2.0.1.jar` from the [releases section](https://github.com/voidfemme/sacredcows/releases).
+1. Ensure you have a Fabric Minecraft server (version 1.21.9) set up with Fabric API installed.
+2. Download the latest `sacredcows-2.1.0.jar` from the [releases section](https://github.com/voidfemme/sacredcows/releases).
 3. Place the JAR file in your server's `mods` folder.
 4. Restart your server.
 5. Edit `config/sacredcows.properties` to customize settings (optional).
@@ -64,7 +64,8 @@ Since Fabric doesn't have a built-in permission system, SacredCows uses operator
 
 | Permission | Description | Default |
 |------------|-------------|---------|
-| Server Operator | Bypass cow protection and access admin commands | Manual OP assignment |
+| Level 2+   | Bypass cow protection (configurable) | Manual OP assignment |
+| Level 3+   | Admin command access                 | Manual OP assignment |
 
 ## Configuration
 
@@ -128,7 +129,7 @@ permissions.admin-permission=sacredcows.admin
 
 ## Compatibility
 
-- **Minecraft Version**: 1.21.7
+- **Minecraft Version**: 1.21.9
 - **Server Software**: Fabric Server with Fabric API
 - **Java Version**: 21 or higher
 
@@ -138,7 +139,11 @@ permissions.admin-permission=sacredcows.admin
 - Dropped formal licensing - individuals can use freely, corporations can deal with the
 legal uncertainty.
 
-### Version 2.0.1 (Latest)
+### Version 2.1.0 (Latest)
+- Updated for Minecraft 1.21.9 and Fabric Loader 0.17.2
+- No gameplay or configuration changes; purely an environment compatibility update
+
+### Version 2.0.1
 - **Bypass Control**: Added `settings.allow-bypass` config option to disable admin bypass permissions
 - **Permission Flexibility**: Admins can now be subject to cow protection regardless of OP status
 - **Testing Enhancement**: Easier testing without needing to deop administrators

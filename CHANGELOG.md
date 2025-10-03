@@ -5,6 +5,28 @@ All notable changes to CowMurder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-10-02
+
+### Changed
+- **Minecraft Compatibility**: Updated from 1.21.7 to 1.21.9
+- **Fabric Loader**: Bumped from 0.16.14 to 0.17.2
+- **Fabric API**: Updated from 0.129.0+1.21.7 to 0.134.0+1.21.9
+- **Yarn Mappings**: Updated to `1.21.9+build.1` for latest method/field mappings
+- **Permissions Handling**: Replaced legacy `isOperator()` check with proper `hasPermissionLevel()` to align with modern Fabric/Minecraft standards
+
+### Technical
+- **Gradle**: Updated `processResources` task to use `providers.provider` for version expansion (removes deprecation warnings)
+- **Codebase**: Unified punishment logic by storing `ServerWorld` reference once per event
+- **Documentation**:
+  - Updated README with new icon, compatibility info, and permission level table
+  - Added changelog entry for 2.1.0
+- **Assets**: Added `icon.png` for mod metadata and README badge
+
+### Compatibility
+- **Minecraft**: 1.21.9 only (no longer supports 1.21.7)
+- **Server Software**: Fabric Server with Fabric API
+- **Java**: Requires Java 21
+
 ## [1.2.0] - 2025-07-12
 
 ### Added

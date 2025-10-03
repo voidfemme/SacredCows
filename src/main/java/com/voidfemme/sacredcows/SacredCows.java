@@ -89,7 +89,7 @@ public class SacredCows implements ModInitializer {
                 if (getConfig().isCustomDeathMessagesEnabled()) {
                     String customMessage = getPendingDeathMessage(player.getUuid());
                     if (customMessage != null) {
-                        player.getServer().getPlayerManager().broadcast(
+                        server.getPlayerManager().broadcast(
                                 Text.literal(customMessage), false);
                     }
                 }
@@ -202,10 +202,10 @@ public class SacredCows implements ModInitializer {
         }
 
         // Otherwise, check for OP status
-        if (permission.equals(config.getBypassPermission()) || permission.equals(config.getAdminPermission())) {
-            return server.getPlayerManager().isOperator(player.getGameProfile());
-        }
-        return false;
+        // Treat OP as "has sufficient permission level"
+        // 2 = command mod, 3 = admin, 4 = owner;
+        int required = (permission.equals(config.getAdminPermission())) ? 3 : 2;
+        return player.hasPermissionLevel(required);
     }
 
     private void setupScoreboard() {
@@ -286,16 +286,17 @@ public class SacredCows implements ModInitializer {
 
     private void applyPunishment(ServerPlayerEntity player) {
         String punishmentType = config.getPunishmentType().toUpperCase();
+        ServerWorld world = (ServerWorld) player.getEntityWorld();
 
         // Lightning effect
         if (config.isLightningEffectEnabled()) {
             try {
-                Vec3d pos = player.getPos();
-                LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, player.getWorld());
+                Vec3d pos = new Vec3d(player.getX(), player.getY(), player.getZ());
+                LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
                 lightning.setPosition(pos);
                 // Make it cosmetic only - otherwise the cow dies too and that's not good praxis
                 lightning.setCosmetic(true);
-                player.getWorld().spawnEntity(lightning);
+                world.spawnEntity(lightning);
             } catch (Exception e) {
                 LOGGER.warn("Failed to create lightning effect: {}", e.getMessage());
             }
@@ -311,7 +312,7 @@ public class SacredCows implements ModInitializer {
         switch (punishmentType) {
             case "DEATH":
                 try {
-                    player.damage((ServerWorld) player.getWorld(), player.getDamageSources().generic(),
+                    player.damage(world, player.getDamageSources().generic(),
                             Float.MAX_VALUE);
                     if (config.isDebugEnabled()) {
                         LOGGER.info("Applied death punishment to {}", player.getName().getString());
@@ -324,7 +325,7 @@ public class SacredCows implements ModInitializer {
             case "DAMAGE":
                 try {
                     float damage = (float) config.getDamageAmount();
-                    player.damage((ServerWorld) player.getWorld(), player.getDamageSources().generic(), damage);
+                    player.damage(world, player.getDamageSources().generic(), damage);
                     if (config.isDebugEnabled()) {
                         LOGGER.info("Applied {} damage to {}", damage, player.getName().getString());
                     }
@@ -343,7 +344,7 @@ public class SacredCows implements ModInitializer {
             default:
                 LOGGER.warn("Unknown punishment type: {}. Defaulting to DEATH.", punishmentType);
                 try {
-                    player.damage((ServerWorld) player.getWorld(), player.getDamageSources().generic(),
+                    player.damage(world, player.getDamageSources().generic(),
                             Float.MAX_VALUE);
                 } catch (Exception e) {
                     LOGGER.warn("Failed to apply default death punishment: {}", e.getMessage());

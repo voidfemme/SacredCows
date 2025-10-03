@@ -47,8 +47,13 @@ buildNumber.properties
 *.metadata
 
 # Gradle
+/.gradle/
 .gradle/
 build/
+/build/
+/run/
+/remappedSrc/
+/classes/
 
 # Eclipse/IntelliJ
 bin/
