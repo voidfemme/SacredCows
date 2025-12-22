@@ -8,6 +8,9 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LightningEntity;
+import net.minecraft.command.permission.LeveledPermissionPredicate;
+import net.minecraft.command.permission.PermissionLevel;
+import net.minecraft.command.permission.PermissionPredicate;
 import net.minecraft.entity.Entity;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.ScoreboardCriterion;
@@ -59,11 +62,13 @@ public class SacredCows implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Initializing SacredCows mod...");
+        LOGGER.info("=== Initializing SacredCows mod... ===");
         instance = this;
 
         // Load configuration
+        LOGGER.info("Loading configuration...");
         loadConfig();
+        LOGGER.info("Configuration loaded. Enabled: {}", config.isEnabled());
 
         if (!config.isEnabled()) {
             LOGGER.info("SacredCows is disabled via configuration.");
@@ -105,13 +110,17 @@ public class SacredCows implements ModInitializer {
     private void loadConfig() {
         try {
             Path configDir = Paths.get("config");
+            LOGGER.info("Config directory: {}", configDir.toAbsolutePath());
             if (!Files.exists(configDir)) {
+                LOGGER.info("Config directory doesn't exist, creating it...");
                 Files.createDirectories(configDir);
             }
 
             Path configFile = configDir.resolve("sacredcows.properties");
+            LOGGER.info("Config file path: {}", configFile.toAbsolutePath());
             config = new SacredCowsConfig(configFile);
             config.load();
+            LOGGER.info("Config loaded successfully");
         } catch (Exception e) {
             LOGGER.error("Failed to load configuration, using defaults", e);
             config = new SacredCowsConfig(null);
@@ -131,13 +140,25 @@ public class SacredCows implements ModInitializer {
             ServerPlayerEntity player = getPlayerFromDamageSource(source);
             if (player == null)
                 return true;
-
-            // Check bypass permission
-            if (hasPermission(player, config.getBypassPermission())) {
-                if (config.isDebugEnabled()) {
-                    LOGGER.info("Player {} bypassed cow protection with permission.", player.getName().getString());
+            // Get the permissionlevel of the player
+            if (player.getPermissions() instanceof LeveledPermissionPredicate leveled) {
+                PermissionLevel playerlevel = leveled.getLevel();
+                PermissionLevel requiredLevel = PermissionLevel.fromLevel(config.getBypassOpLevel());
+                // now what can you do with level?
+                // Check if player has bypass permission (configurable OP level)
+                if (config.isAllowBypass() && playerlevel.isAtLeast(requiredLevel)) {
+                    // Player has sufficient permission
+                    if (config.isDebugEnabled()) {
+                        LOGGER.info("Player {} bypassed cow protection (OP level {} >= required {})",
+                                player.getName().getString(), playerlevel, config.getBypassOpLevel());
+                    }
+                    return true;
                 }
-                return true;
+                if (config.isDebugEnabled()) {
+                    LOGGER.info("Player {} attacked a cow, applying punishment (OP level: {})",
+                            player.getName().getString(), playerlevel);
+                }
+
             }
 
             // Track assault
@@ -193,19 +214,6 @@ public class SacredCows implements ModInitializer {
         }
 
         return null;
-    }
-
-    private boolean hasPermission(ServerPlayerEntity player, String permission) {
-        // Check if bypass is disabled in config
-        if (permission.equals(config.getBypassPermission()) && !config.isAllowBypass()) {
-            return false;
-        }
-
-        // Otherwise, check for OP status
-        // Treat OP as "has sufficient permission level"
-        // 2 = command mod, 3 = admin, 4 = owner;
-        int required = (permission.equals(config.getAdminPermission())) ? 3 : 2;
-        return player.hasPermissionLevel(required);
     }
 
     private void setupScoreboard() {
@@ -393,16 +401,19 @@ public class SacredCows implements ModInitializer {
     }
 
     private void registerSacredCowsCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
+        LOGGER.info("Registering /sacredcows command...");
         dispatcher.register(CommandManager.literal("sacredcows")
                 .requires(source -> {
-                    try {
-                        ServerPlayerEntity player = source.getPlayer();
-                        return player != null && hasPermission(player, config.getAdminPermission());
-                    } catch (Exception e) {
-                        // If not a player (console), allow
-                        return true;
+                    // Check if source has the required permissions
+                    // return true or false
+                    if (source.getPermissions() instanceof LeveledPermissionPredicate leveled) {
+                        PermissionLevel sourceLevel = leveled.getLevel();
+                        PermissionLevel requiredLevel = PermissionLevel.fromLevel(config.getBypassOpLevel());
+                        return sourceLevel.isAtLeast(requiredLevel);
                     }
+                    return false;
                 })
+                .executes(this::executeMainCommand)
                 .executes(this::executeMainCommand)
                 .then(CommandManager.literal("reload")
                         .executes(this::executeReloadCommand))

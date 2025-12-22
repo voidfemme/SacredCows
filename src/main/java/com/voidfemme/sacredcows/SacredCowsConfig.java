@@ -17,6 +17,8 @@ public class SacredCowsConfig {
     private boolean lightningEffectEnabled = true;
     private boolean customDeathMessagesEnabled = true;
     private boolean allowBypass = true;
+    private int bypassOpLevel = 2;
+    private int adminOpLevel = 2;
 
     // Scoreboard settings
     private boolean scoreboardEnabled = true;
@@ -90,6 +92,8 @@ public class SacredCowsConfig {
         properties.setProperty("settings.lightning-effect", "true");
         properties.setProperty("settings.custom-death-messages", "true");
         properties.setProperty("settings.allow-bypass", "true");
+        properties.setProperty("settings.bypass-op-level", "2");
+        properties.setProperty("settings.admin-op-level", "2");
 
         // Scoreboard Settings
         properties.setProperty("scoreboard.enabled", "true");
@@ -120,6 +124,8 @@ public class SacredCowsConfig {
         customDeathMessagesEnabled = Boolean
                 .parseBoolean(properties.getProperty("settings.custom-death-messages", "true"));
         allowBypass = Boolean.parseBoolean(properties.getProperty("settings.allow-bypass", "true"));
+        bypassOpLevel = Integer.parseInt(properties.getProperty("settings.bypass-op-level", "2"));
+        adminOpLevel = Integer.parseInt(properties.getProperty("settings.admin-op-level", "2"));
 
         // Scoreboard settings
         scoreboardEnabled = Boolean.parseBoolean(properties.getProperty("scoreboard.enabled", "true"));
@@ -195,6 +201,14 @@ public class SacredCowsConfig {
 
     public boolean isAllowBypass() {
         return allowBypass;
+    }
+
+    public int getBypassOpLevel() {
+        return bypassOpLevel;
+    }
+
+    public int getAdminOpLevel() {
+        return adminOpLevel;
     }
 
     public String getAssaultObjective() {
