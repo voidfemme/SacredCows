@@ -25,7 +25,7 @@ SacredCows is a configurable Minecraft Fabric mod that adds a humorous twist to 
 
 ## Installation
 
-1. Ensure you have a Fabric Minecraft server (version 1.21.9) set up with Fabric API installed.
+1. Ensure you have a Fabric Minecraft server (version 1.21.11) set up with Fabric API installed.
 2. Download the latest `sacredcows-2.1.0.jar` from the [releases section](https://github.com/voidfemme/sacredcows/releases).
 3. Place the JAR file in your server's `mods` folder.
 4. Restart your server.
@@ -139,7 +139,11 @@ permissions.admin-permission=sacredcows.admin
 - Dropped formal licensing - individuals can use freely, corporations can deal with the
 legal uncertainty.
 
-### Version 2.1.0 (Latest)
+### Version 2.2.0 (Latest)
+- Updated for Minecraft 1.21.11 and Fabric Loader >= 0.18.2
+- No gameplay or configuration changes; purely an environment compatibility update
+
+### Version 2.1.0
 - Updated for Minecraft 1.21.9 and Fabric Loader 0.17.2
 - No gameplay or configuration changes; purely an environment compatibility update
 
