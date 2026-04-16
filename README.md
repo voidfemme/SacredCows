@@ -145,7 +145,7 @@ permissions.admin-permission=sacredcows.admin
 
 ## Recent Updates
 
-### Version 3.0.0
+### Version 3.0.0 (Latest)
 
 - Updated for Minecraft 26.1 and Fabric Loader 0.18.4
 - No gameplay or configuration changes; purely an environment compatibility update
@@ -155,7 +155,7 @@ permissions.admin-permission=sacredcows.admin
 - Dropped formal licensing - individuals can use freely, corporations can deal with the
   legal uncertainty.
 
-### Version 2.2.0 (Latest)
+### Version 2.2.0
 
 - Updated for Minecraft 1.21.11 and Fabric Loader >= 0.18.2
 - No gameplay or configuration changes; purely an environment compatibility update
