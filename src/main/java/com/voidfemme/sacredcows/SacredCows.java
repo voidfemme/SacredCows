@@ -1,12 +1,8 @@
 package com.voidfemme.sacredcows;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -33,9 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.context.CommandContext;
 
 public class SacredCows implements ModInitializer {
     public static final String MOD_ID = "sacredcows";
@@ -46,6 +39,7 @@ public class SacredCows implements ModInitializer {
     private final Random random = new Random();
     private final Map<UUID, PendingPunishment> pendingPunishments = new ConcurrentHashMap<>();
     private MinecraftServer server;
+    private SacredCowsCommands commands;
 
     private static class PendingPunishment {
         final String deathMessage;
@@ -72,11 +66,11 @@ public class SacredCows implements ModInitializer {
             return;
         }
 
+        commands = new SacredCowsCommands(this, config);
+        commands.register();
+
         // Register event handlers
         registerEventHandlers();
-
-        // Register commands
-        registerCommands();
 
         // Setup server lifecycle events
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -104,7 +98,7 @@ public class SacredCows implements ModInitializer {
         }
     }
 
-    private void loadConfig() {
+    public void loadConfig() {
         try {
             Path configDir = Paths.get("config");
             LOGGER.info("Config directory: {}", configDir.toAbsolutePath());
@@ -122,6 +116,10 @@ public class SacredCows implements ModInitializer {
             LOGGER.error("Failed to load configuration, using defaults", e);
             config = new SacredCowsConfig(null);
         }
+    }
+
+    public MinecraftServer getServer() {
+        return server;
     }
 
     private void registerEventHandlers() {
@@ -213,7 +211,7 @@ public class SacredCows implements ModInitializer {
         return null;
     }
 
-    private void setupScoreboard() {
+    public void setupScoreboard() {
         if (!config.isScoreboardEnabled())
             return;
 
@@ -391,34 +389,6 @@ public class SacredCows implements ModInitializer {
         });
     }
 
-    private void registerCommands() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            registerSacredCowsCommand(dispatcher);
-        });
-    }
-
-    private void registerSacredCowsCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
-        LOGGER.info("Registering /sacredcows command...");
-        dispatcher.register(Commands.literal("sacredcows")
-                .requires(source -> {
-                    // Check if source has the required permissions
-                    // return true or false
-                    if (source.permissions() instanceof LevelBasedPermissionSet leveled) {
-                        PermissionLevel sourceLevel = leveled.level();
-                        PermissionLevel requiredLevel = PermissionLevel.byId(config.getBypassOpLevel());
-                        return sourceLevel.isEqualOrHigherThan(requiredLevel);
-                    }
-                    return false;
-                })
-                .executes(this::executeMainCommand)
-                .executes(this::executeMainCommand)
-                .then(Commands.literal("reload")
-                        .executes(this::executeReloadCommand))
-                .then(Commands.literal("stats")
-                        .then(Commands.argument("player", StringArgumentType.string())
-                                .executes(this::executeStatsCommand))));
-    }
-
     private static String getVersion() {
         try (InputStream input = SacredCows.class.getResourceAsStream("/version.properties")) {
             Properties prop = new Properties();
@@ -427,66 +397,6 @@ public class SacredCows implements ModInitializer {
         } catch (IOException e) {
             return "unknown";
         }
-    }
-
-    private int executeMainCommand(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        source.sendSuccess(() -> Component.literal("§6SacredCows v" + getVersion()), false);
-        source.sendSuccess(() -> Component.literal("Usage: /sacredcows [reload|stats <player>]").withStyle(ChatFormatting.GOLD),
-                false);
-        return 1;
-    }
-
-    private int executeReloadCommand(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        try {
-            loadConfig();
-            setupScoreboard();
-            source.sendSuccess(
-                    () -> Component.literal("SacredCows configuration reloaded successfully!").withStyle(ChatFormatting.GREEN),
-                    false);
-        } catch (Exception e) {
-            source.sendSuccess(() -> Component.literal("§cFailed to reload configuration: " + e.getMessage()), false);
-            LOGGER.warn("Failed to reload config: {}", e.getMessage());
-        }
-        return 1;
-    }
-
-    private int executeStatsCommand(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        String playerName = StringArgumentType.getString(context, "player");
-
-        try {
-            Scoreboard scoreboard = server.getScoreboard();
-
-            source.sendSuccess(
-                    () -> Component.literal("=== Cow Stats for " + playerName + " ===").withStyle(ChatFormatting.GOLD), false);
-
-            if (config.isTrackAssaultsEnabled()) {
-                Objective assaults = scoreboard.getObjective(config.getAssaultObjective());
-                if (assaults != null) {
-                    ScoreHolder scoreHolder = ScoreHolder.forNameOnly(playerName);
-                    int assaultScore = scoreboard.getOrCreatePlayerScore(scoreHolder, assaults).get();
-                    source.sendSuccess(
-                            () -> Component.literal("Cow Assaults: " + assaultScore).withStyle(ChatFormatting.YELLOW), false);
-                }
-            }
-
-            if (config.isTrackKillsEnabled()) {
-                Objective kills = scoreboard.getObjective(config.getKillObjective());
-                if (kills != null) {
-                    ScoreHolder scoreHolder = ScoreHolder.forNameOnly(playerName);
-                    int killScore = scoreboard.getOrCreatePlayerScore(scoreHolder, kills).get();
-                    source.sendSuccess(() -> Component.literal("Cow Kills: " + killScore).withStyle(ChatFormatting.YELLOW),
-                            false);
-                }
-            }
-        } catch (Exception e) {
-            source.sendSuccess(() -> Component.literal("§cError retrieving stats: " + e.getMessage()), false);
-            LOGGER.warn("Error showing stats for {}: {}", playerName, e.getMessage());
-        }
-
-        return 1;
     }
 
     public static SacredCows getInstance() {
