@@ -58,11 +58,19 @@ The mod works automatically once installed. Players will be punished for harming
 
 ## Commands
 
-| Command                      | Description                          | Permission      |
-| ---------------------------- | ------------------------------------ | --------------- |
-| `/sacredcows`                | Show mod info and help               | Server operator |
-| `/sacredcows reload`         | Reload configuration file            | Server operator |
-| `/sacredcows stats <player>` | View player's cow-related statistics | Server operator |
+| Command                                                       | Description                                 | Permission      |
+| ------------------------------------------------------------- | ------------------------------------------- | --------------- |
+| `/sacredcows`                                                 | Show mod info and help                      | All Players     |
+| `/sacredcows reload_config`                                   | Reload configuration file                   | Server operator |
+| `/sacredcows save_config`                                     | Save current settings to configuration file | Server operator |
+| `/sacredcows enabled <true\false>`                            | Enable/Disable mod                          | Server operator |
+| `/sacredcows bypass <true\false>`                             | Toggle admin bypass                         | Server operator |
+| `/sacredcows lightning_effect <true\false>`                   | Toggle lightning effect                     | Server operator |
+| `/sacredcows punishment_type <death\damage\lightning_effect>` | Set punishment type file                    | Server operator |
+| `/sacredcows stats player <name>`                             | Per-player cow stats                        | All Players     |
+| `/sacredcows stats global`                                    | Global total cow stats                      | Server operator |
+
+_Admin Commands require OP level 2 by default. (configurable)_
 
 ## Permissions
 
@@ -79,48 +87,31 @@ The mod creates a `config/sacredcows.properties` file with the following options
 
 ### General Settings
 
-```properties
-# Enable/disable the mod functionality
-settings.enabled=true
-
-# Enable debug logging
-settings.debug=false
-
-# Punishment type: DEATH, DAMAGE, LIGHTNING_ONLY
-settings.punishment-type=DEATH
-
-# Amount of damage to deal if punishment-type is DAMAGE
-settings.damage-amount=10.0
-
-# Enable lightning effect when punishing
-settings.lightning-effect=true
-
-# Enable custom death messages
-settings.custom-death-messages=true
 ```
+# == General Settings ==
+settings.enabled=true
+settings.punishment-type=DEATH # DEATH, DAMAGE, or LIGHTNING_ONLY
+settings.damage-amount=10.0
+settings.lightning-effect=true
+settings.custom-death-messages=true
+settings.allow-bypass=true
+settings.bypass-op-level=2
+settings.admin-op-level=2
 
-### Scoreboard Settings
-
-```properties
-# Enable scoreboard tracking
+# == Scoreboard Settings ==
 scoreboard.enabled=true
-
-# Track cow assaults (damage events)
 scoreboard.track-assaults=true
-
-# Track cow kills (death events)
 scoreboard.track-kills=true
-
-# Objective and display names
 scoreboard.assault-objective=cowAssaults
 scoreboard.kill-objective=cowKills
 scoreboard.assault-display=Cow Assaults
 scoreboard.kill-display=Cow Kills
+
 ```
 
 ### Death Messages
 
-```properties
+```
 # Custom death messages (use %player% as placeholder)
 death-messages.0=%player% was moo-rdered for their bovine crimes
 death-messages.1=%player% faced divine bovine retribution
@@ -131,7 +122,7 @@ death-messages.4=A mysterious force struck down %player% for harming a cow
 
 ### Permissions
 
-```properties
+```
 # Permission strings (used with operator status)
 permissions.bypass-permission=sacredcows.bypass
 permissions.admin-permission=sacredcows.admin
