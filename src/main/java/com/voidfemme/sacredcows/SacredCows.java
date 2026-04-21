@@ -3,6 +3,7 @@ package com.voidfemme.sacredcows;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -33,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SacredCows implements ModInitializer {
     public static final String MOD_ID = "sacredcows";
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static final long PUNISHMENT_EXPIRE_TICKS = 200; // 10 seconds
+    private static final int CLEANUP_INTERVAL_TICKS = 600; // 30 seconds
 
     private static SacredCows instance;
     private SacredCowsConfig config;
@@ -40,14 +43,16 @@ public class SacredCows implements ModInitializer {
     private final Map<UUID, PendingPunishment> pendingPunishments = new ConcurrentHashMap<>();
     private MinecraftServer server;
     private SacredCowsCommands commands;
+    private int cleanupTickCounter = 0;
+    private long serverTickCounter = 0;
 
-    private static class PendingPunishment {
+    private class PendingPunishment {
         final String deathMessage;
-        final long timestamp;
+        final long creationTick;
 
         PendingPunishment(String deathMessage) {
             this.deathMessage = deathMessage;
-            this.timestamp = System.currentTimeMillis();
+            this.creationTick = serverTickCounter;
         }
     }
 
@@ -76,7 +81,16 @@ public class SacredCows implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             this.server = server;
             setupScoreboard();
-            startCleanupTask();
+        });
+
+        // Set up server tick tracking
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            this.cleanupTickCounter += 1;
+            this.serverTickCounter += 1;
+            if (this.cleanupTickCounter >= CLEANUP_INTERVAL_TICKS) {
+                this.cleanupTickCounter = 0;
+                cleanupExpiredPunishments();
+            }
         });
 
         // In your SacredCows.java onInitialize() method, add:
@@ -365,23 +379,11 @@ public class SacredCows implements ModInitializer {
         return message.replace("%player%", playerName);
     }
 
-    private void startCleanupTask() {
-        // Schedule cleanup task every 30 seconds (600 ticks)
-        Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                cleanupExpiredPunishments();
-            }
-        }, 30000, 30000);
-    }
-
     private void cleanupExpiredPunishments() {
-        long currentTime = System.currentTimeMillis();
-        long expireTime = 10000; // 10 seconds
+        long currentTick = this.serverTickCounter;
 
         pendingPunishments.entrySet().removeIf(entry -> {
-            boolean expired = (currentTime - entry.getValue().timestamp) > expireTime;
+            boolean expired = (currentTick - entry.getValue().creationTick) > PUNISHMENT_EXPIRE_TICKS;
             if (expired && config.isDebugEnabled()) {
                 LOGGER.info("Cleaned up expired punishment for player UUID: {}", entry.getKey());
             }
