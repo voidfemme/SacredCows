@@ -145,7 +145,12 @@ permissions.admin-permission=sacredcows.admin
 
 ## Recent Updates
 
-### Version 3.0.0 (Latest)
+### Version 3.1.0 (Latest)
+
+- Added a full command menu.
+- Fixed a small bug with cleanup and tick-counting mechanics.
+
+### Version 3.0.0
 
 - Updated for Minecraft 26.1 and Fabric Loader 0.18.4
 - No gameplay or configuration changes; purely an environment compatibility update
