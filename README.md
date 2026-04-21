@@ -58,17 +58,17 @@ The mod works automatically once installed. Players will be punished for harming
 
 ## Commands
 
-| Command                                                       | Description                                 | Permission      |
-| ------------------------------------------------------------- | ------------------------------------------- | --------------- |
-| `/sacredcows`                                                 | Show mod info and help                      | All Players     |
-| `/sacredcows reload_config`                                   | Reload configuration file                   | Server operator |
-| `/sacredcows save_config`                                     | Save current settings to configuration file | Server operator |
-| `/sacredcows enabled <true\false>`                            | Enable/Disable mod                          | Server operator |
-| `/sacredcows bypass <true\false>`                             | Toggle admin bypass                         | Server operator |
-| `/sacredcows lightning_effect <true\false>`                   | Toggle lightning effect                     | Server operator |
-| `/sacredcows punishment_type <death\damage\lightning_effect>` | Set punishment type file                    | Server operator |
-| `/sacredcows stats player <name>`                             | Per-player cow stats                        | All Players     |
-| `/sacredcows stats global`                                    | Global total cow stats                      | Server operator |
+| Command                                                         | Description                                 | Permission      |
+| --------------------------------------------------------------- | ------------------------------------------- | --------------- |
+| `/sacredcows`                                                   | Show mod info and help                      | All Players     |
+| `/sacredcows reload_config`                                     | Reload configuration file                   | Server operator |
+| `/sacredcows save_config`                                       | Save current settings to configuration file | Server operator |
+| `/sacredcows enabled <true\|false>`                             | Enable/Disable mod                          | Server operator |
+| `/sacredcows bypass <true\|false>`                              | Toggle admin bypass                         | Server operator |
+| `/sacredcows lightning_effect <true\|false>`                    | Toggle lightning effect                     | Server operator |
+| `/sacredcows punishment_type <death\|damage\|lightning_effect>` | Set punishment type file                    | Server operator |
+| `/sacredcows stats player <name>`                               | Per-player cow stats                        | All Players     |
+| `/sacredcows stats global`                                      | Global total cow stats                      | Server operator |
 
 _Admin Commands require OP level 2 by default. (configurable)_
 
