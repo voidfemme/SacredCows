@@ -107,22 +107,15 @@ scoreboard.kill-objective=cowKills
 scoreboard.assault-display=Cow Assaults
 scoreboard.kill-display=Cow Kills
 
-```
-
-### Death Messages
-
-```
+# == Death Messages ==
 # Custom death messages (use %player% as placeholder)
 death-messages.0=%player% was moo-rdered for their bovine crimes
 death-messages.1=%player% faced divine bovine retribution
 death-messages.2=The cows fought back, and %player% lost
 death-messages.3=%player% learned the hard way not to mess with cows
 death-messages.4=A mysterious force struck down %player% for harming a cow
-```
 
-### Permissions
-
-```
+# == Permissions ==
 # Permission strings (used with operator status)
 permissions.bypass-permission=sacredcows.bypass
 permissions.admin-permission=sacredcows.admin
