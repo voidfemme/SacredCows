@@ -1,5 +1,7 @@
 package com.voidfemme.sacredcows;
 
+import com.voidfemme.sacredcows.commands.SacredCowsCommands;
+import com.voidfemme.sacredcows.config.SacredCowsConfig;
 import com.voidfemme.sacredcows.features.CowProtectionFeature;
 import com.voidfemme.sacredcows.features.ScoreboardFeature;
 import java.io.IOException;

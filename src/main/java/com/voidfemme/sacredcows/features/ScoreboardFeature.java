@@ -1,7 +1,7 @@
 package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
-import com.voidfemme.sacredcows.SacredCowsConfig;
+import com.voidfemme.sacredcows.config.SacredCowsConfig;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.Objective;

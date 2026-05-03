@@ -1,4 +1,4 @@
-package com.voidfemme.sacredcows;
+package com.voidfemme.sacredcows.config;
 
 import java.io.*;
 import java.nio.file.Files;

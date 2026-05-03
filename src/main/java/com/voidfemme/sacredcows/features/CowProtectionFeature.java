@@ -1,7 +1,7 @@
 package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
-import com.voidfemme.sacredcows.SacredCowsConfig;
+import com.voidfemme.sacredcows.config.SacredCowsConfig;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -22,11 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CowProtectionFeature {
-  // Owns
-  //  - punishment type dispatch,
-  //  - lightning effect,
-  //  - `pendingPunishments` death message map
-  //  - `hurtServer` calls
   public static final String MOD_ID = "sacredcows";
   private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
   private static final long PUNISHMENT_EXPIRE_TICKS = 200; // 10 sec
@@ -131,7 +126,7 @@ public class CowProtectionFeature {
   }
 
   private void applyPunishment(ServerPlayer player) {
-    String punishmentType = config.getPunishmentType().toUpperCase();
+    String punishmentType = config.getPunishmentType();
     ServerLevel world = (ServerLevel) player.level();
 
     // Lightning effect

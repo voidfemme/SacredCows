@@ -1,4 +1,4 @@
-package com.voidfemme.sacredcows;
+package com.voidfemme.sacredcows.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -6,6 +6,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.voidfemme.sacredcows.SacredCows;
+import com.voidfemme.sacredcows.config.SacredCowsConfig;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
@@ -42,7 +44,7 @@ public class SacredCowsCommands {
       (context, builder) -> {
         builder.suggest("death");
         builder.suggest("damage");
-        builder.suggest("lightning_effect");
+        builder.suggest("lightning_only");
         return builder.buildFuture();
       };
   private static final SuggestionProvider<CommandSourceStack> PLAYER_NAME_SUGGESTIONS =
@@ -447,13 +449,13 @@ public class SacredCowsCommands {
     CommandSourceStack source = ctx.getSource();
     String value = StringArgumentType.getString(ctx, "value");
     // Suggestions don't enforce - validate here.
-    if (!value.equals("death") && !value.equals("damage") && !value.equals("lightning_effect")) {
+    if (!value.equals("death") && !value.equals("damage") && !value.equals("lightning_only")) {
       ctx.getSource()
           .sendFailure(
               Component.literal(
                   "Invalid punishment type: "
                       + value
-                      + ". Must be one of: death, damage, lightning_effect"));
+                      + ". Must be one of: death, damage, lightning_only"));
       return 0;
     }
     this.config.setPunishmentType(value);
