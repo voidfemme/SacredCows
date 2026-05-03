@@ -1,18 +1,23 @@
 package com.voidfemme.sacredcows.config;
 
+import com.voidfemme.sacredcows.features.CowProtectionFeature.PunishmentMode;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class SacredCowsConfig {
+public class CowConfig {
+  public static final String MOD_ID = "sacredcows.config.CowConfig";
+  private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
   private final Path configFile;
   private final Properties properties = new Properties();
 
   // Default values
   private boolean enabled = true;
   private boolean debugEnabled = false;
-  private String punishmentType = "DEATH";
+  private PunishmentMode punishmentMode = PunishmentMode.DEATH;
   private double damageAmount = 10.0;
   private boolean lightningEffectEnabled = true;
   private boolean customDeathMessagesEnabled = true;
@@ -42,7 +47,7 @@ public class SacredCowsConfig {
           "%player% learned the hard way not to mess with cows",
           "A mysterious force struck down %player% for harming a cow");
 
-  public SacredCowsConfig(Path configFile) {
+  public CowConfig(Path configFile) {
     this.configFile = configFile;
   }
 
@@ -109,7 +114,7 @@ public class SacredCowsConfig {
     // General Settings
     properties.setProperty("settings.enabled", String.valueOf(enabled));
     properties.setProperty("settings.debug", String.valueOf(debugEnabled));
-    properties.setProperty("settings.punishment-type", punishmentType);
+    properties.setProperty("settings.punishment-mode", punishmentMode.toString());
     properties.setProperty("settings.damage-amount", String.valueOf(damageAmount));
     properties.setProperty("settings.lightning-effect", String.valueOf(lightningEffectEnabled));
     // properties.setProperty("settings.custom-death-messages", "true");
@@ -145,7 +150,7 @@ public class SacredCowsConfig {
     // General Settings
     properties.setProperty("settings.enabled", "true");
     properties.setProperty("settings.debug", "false");
-    properties.setProperty("settings.punishment-type", "DEATH");
+    properties.setProperty("settings.punishment-mode", "DEATH");
     properties.setProperty("settings.damage-amount", "10.0");
     properties.setProperty("settings.lightning-effect", "true");
     properties.setProperty("settings.custom-death-messages", "true");
@@ -176,15 +181,44 @@ public class SacredCowsConfig {
     // General settings
     enabled = Boolean.parseBoolean(properties.getProperty("settings.enabled", "true"));
     debugEnabled = Boolean.parseBoolean(properties.getProperty("settings.debug", "false"));
-    punishmentType = properties.getProperty("settings.punishment-type", "DEATH");
-    damageAmount = Double.parseDouble(properties.getProperty("settings.damage-amount", "10.0"));
+    try {
+      punishmentMode =
+          PunishmentMode.fromString(properties.getProperty("settings.punishment-mode", "death"));
+    } catch (IllegalArgumentException e) {
+      LOGGER.warn(
+          "Invalid value for 'settings.punishment-mode': {}. Defaulting to 'DEATH'.",
+          e.getMessage());
+      punishmentMode = PunishmentMode.DEATH;
+    }
+    try {
+      damageAmount = Double.parseDouble(properties.getProperty("settings.damage-amount", "10.0"));
+    } catch (NumberFormatException e) {
+      LOGGER.warn(
+          "Not a valid double for value 'settings.damage-amount': {}. Defaulting to '10.0'.");
+      damageAmount = 10.0;
+    }
     lightningEffectEnabled =
         Boolean.parseBoolean(properties.getProperty("settings.lightning-effect", "true"));
     customDeathMessagesEnabled =
         Boolean.parseBoolean(properties.getProperty("settings.custom-death-messages", "true"));
     allowBypass = Boolean.parseBoolean(properties.getProperty("settings.allow-bypass", "true"));
-    bypassOpLevel = Integer.parseInt(properties.getProperty("settings.bypass-op-level", "2"));
-    adminOpLevel = Integer.parseInt(properties.getProperty("settings.admin-op-level", "2"));
+    // `parseInt()` and `parseDouble()` will throw `NumberFormatException`
+    try {
+      bypassOpLevel = Integer.parseInt(properties.getProperty("settings.bypass-op-level", "2"));
+    } catch (NumberFormatException e) {
+      LOGGER.warn(
+          "Not a valid integer for value 'settings.bypass-op-level': {}. Defaulting to '2'.",
+          e.getMessage());
+      bypassOpLevel = 2;
+    }
+    try {
+      adminOpLevel = Integer.parseInt(properties.getProperty("settings.admin-op-level", "2"));
+    } catch (NumberFormatException e) {
+      LOGGER.warn(
+          "Not a valid integer for value 'settings.admin-op-level': {}. Defaulting to '2'.",
+          e.getMessage());
+      adminOpLevel = 2;
+    }
 
     // Scoreboard settings
     scoreboardEnabled = Boolean.parseBoolean(properties.getProperty("scoreboard.enabled", "true"));
@@ -233,8 +267,8 @@ public class SacredCowsConfig {
     return debugEnabled;
   }
 
-  public String getPunishmentType() {
-    return punishmentType;
+  public PunishmentMode getPunishmentMode() {
+    return punishmentMode;
   }
 
   public double getDamageAmount() {
@@ -306,8 +340,8 @@ public class SacredCowsConfig {
     this.lightningEffectEnabled = enabled;
   }
 
-  public void setPunishmentType(String punishmentType) {
-    this.punishmentType = punishmentType;
+  public void setPunishmentMode(PunishmentMode punishmentMode) {
+    this.punishmentMode = punishmentMode;
   }
 
   public void setBypassOpLevel(int level) {

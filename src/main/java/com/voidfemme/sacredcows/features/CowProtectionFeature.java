@@ -1,7 +1,7 @@
 package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
-import com.voidfemme.sacredcows.config.SacredCowsConfig;
+import com.voidfemme.sacredcows.config.CowConfig;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -22,17 +22,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CowProtectionFeature {
-  public static final String MOD_ID = "sacredcows";
+  public static final String MOD_ID = "sacredcows.features.CowProtectionFeature";
   private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
   private static final long PUNISHMENT_EXPIRE_TICKS = 200; // 10 sec
   private final Map<UUID, PendingPunishment> pendingPunishments = new ConcurrentHashMap<>();
   private final SacredCows owner;
-  private final SacredCowsConfig config;
+  private final CowConfig config;
   private final Random random = new Random();
 
-  public CowProtectionFeature(SacredCows owner, SacredCowsConfig config) {
+  public CowProtectionFeature(SacredCows owner, CowConfig config) {
     this.owner = owner;
     this.config = config;
+  }
+
+  public enum PunishmentMode {
+    DEATH,
+    DAMAGE,
+    LIGHTNING_ONLY;
+
+    public static PunishmentMode fromString(String s) {
+      return switch (s.toLowerCase()) {
+        case "death", "kill" -> DEATH;
+        case "damage", "hurt" -> DAMAGE;
+        case "lightning_only", "lightning-only" -> LIGHTNING_ONLY;
+        default -> throw new IllegalArgumentException("Unknown punishment: " + s);
+      };
+    }
   }
 
   private class PendingPunishment {
@@ -126,7 +141,7 @@ public class CowProtectionFeature {
   }
 
   private void applyPunishment(ServerPlayer player) {
-    String punishmentType = config.getPunishmentType();
+    PunishmentMode punishmentMode = config.getPunishmentMode();
     ServerLevel world = (ServerLevel) player.level();
 
     // Lightning effect
@@ -150,8 +165,8 @@ public class CowProtectionFeature {
     }
 
     // Apply punishment
-    switch (punishmentType) {
-      case "death":
+    switch (punishmentMode) {
+      case PunishmentMode.DEATH:
         try {
           player.hurtServer(world, player.damageSources().generic(), Float.MAX_VALUE);
           if (config.isDebugEnabled()) {
@@ -162,7 +177,7 @@ public class CowProtectionFeature {
         }
         break;
 
-      case "damage":
+      case PunishmentMode.DAMAGE:
         try {
           float damage = (float) config.getDamageAmount();
           player.hurtServer(world, player.damageSources().generic(), damage);
@@ -175,7 +190,7 @@ public class CowProtectionFeature {
         }
         break;
 
-      case "lightning_only":
+      case PunishmentMode.LIGHTNING_ONLY:
         // Lightning effect already applied above
         if (config.isDebugEnabled()) {
           LOGGER.info("Applied lightning-only punishment to {}", player.getName().getString());
@@ -183,7 +198,7 @@ public class CowProtectionFeature {
         break;
 
       default:
-        LOGGER.warn("Unknown punishment type: {}. Defaulting to DEATH.", punishmentType);
+        LOGGER.warn("Unknown punishment mode: {}. Defaulting to DEATH.", punishmentMode);
         try {
           player.hurtServer(world, player.damageSources().generic(), Float.MAX_VALUE);
         } catch (Exception e) {

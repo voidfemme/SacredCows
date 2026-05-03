@@ -1,7 +1,8 @@
 package com.voidfemme.sacredcows;
 
-import com.voidfemme.sacredcows.commands.SacredCowsCommands;
-import com.voidfemme.sacredcows.config.SacredCowsConfig;
+import com.voidfemme.sacredcows.commands.CowCommands;
+import com.voidfemme.sacredcows.components.CowComponents;
+import com.voidfemme.sacredcows.config.CowConfig;
 import com.voidfemme.sacredcows.features.CowProtectionFeature;
 import com.voidfemme.sacredcows.features.ScoreboardFeature;
 import java.io.IOException;
@@ -24,8 +25,8 @@ public class SacredCows implements ModInitializer {
 
   private MinecraftServer server;
   private static SacredCows instance;
-  private SacredCowsConfig config;
-  private SacredCowsCommands commands;
+  private CowConfig config;
+  private CowCommands commands;
   private CowProtectionFeature cowProtectionFeature;
   private ScoreboardFeature scoreboard;
   private int cleanupTickCounter = 0;
@@ -47,12 +48,15 @@ public class SacredCows implements ModInitializer {
     }
 
     // Config is now loaded, so we can create the commands and the features!
-    commands = new SacredCowsCommands(this, config);
+    commands = new CowCommands(this, config);
     this.scoreboard = new ScoreboardFeature(this, config);
     commands.register();
 
     // Create the cowProtectionFeature - We will need to call the supplier after the fact
     this.cowProtectionFeature = new CowProtectionFeature(this, config);
+
+    // Initialize CowComponents so the mixins work
+    CowComponents.initialize();
 
     // Register event handlers
     cowProtectionFeature.registerEventHandlers();
@@ -98,12 +102,12 @@ public class SacredCows implements ModInitializer {
 
       Path configFile = configDir.resolve("sacredcows.properties");
       LOGGER.info("Config file path: {}", configFile.toAbsolutePath());
-      config = new SacredCowsConfig(configFile);
+      config = new CowConfig(configFile);
       config.load();
       LOGGER.info("Config loaded successfully");
     } catch (Exception e) {
       LOGGER.error("Failed to load configuration, using defaults", e);
-      config = new SacredCowsConfig(null);
+      config = new CowConfig(null);
     }
   }
 
@@ -125,7 +129,7 @@ public class SacredCows implements ModInitializer {
     return instance;
   }
 
-  public SacredCowsConfig getConfig() {
+  public CowConfig getConfig() {
     return config;
   }
 }

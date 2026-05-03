@@ -7,7 +7,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.voidfemme.sacredcows.SacredCows;
-import com.voidfemme.sacredcows.config.SacredCowsConfig;
+import com.voidfemme.sacredcows.config.CowConfig;
+import com.voidfemme.sacredcows.features.CowProtectionFeature.PunishmentMode;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
@@ -27,20 +28,20 @@ import net.minecraft.world.scores.Scoreboard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SacredCowsCommands {
-  public static final String MOD_ID = "sacredcows.SacredCowsCommands";
+public class CowCommands {
+  public static final String MOD_ID = "sacredcows.cow_commands";
   private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
   private final SacredCows owner;
-  private final SacredCowsConfig config;
+  private final CowConfig config;
 
-  public SacredCowsCommands(SacredCows owner, SacredCowsConfig config) {
+  public CowCommands(SacredCows owner, CowConfig config) {
     this.owner = owner;
     this.config = config;
   }
 
   // Tab-completion suggestions for the example subcommand argument.
   // Replace or expand the list below with whatever values make sense for your command.
-  private static final SuggestionProvider<CommandSourceStack> PUNISHMENT_TYPE_SUGGESTIONS =
+  private static final SuggestionProvider<CommandSourceStack> PUNISHMENT_MODE_SUGGESTIONS =
       (context, builder) -> {
         builder.suggest("death");
         builder.suggest("damage");
@@ -55,17 +56,17 @@ public class SacredCowsCommands {
   // To add a new subcommand:
   //    1. Write an executeFoo(...) method at the bottom.
   //    2. Add one line here using the appropriate helper:
-  //            addBoolCommand(root, "foo", SacredCowsCommands::executeFoo);
+  //            addBoolCommand(root, "foo", CowCommands::executeFoo);
   //        or
-  //            addEnumCommand(root, "foo", FOO_SUGGESTIONS, SacredCowsCommands::executeFoo);
+  //            addEnumCommand(root, "foo", FOO_SUGGESTIONS, CowCommands::executeFoo);
   //    3. Add a line in executeHelp describing it.
   public void register() {
     LOGGER.info("Registering /sacredcows command...");
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
           LiteralArgumentBuilder<CommandSourceStack> root =
-              Commands.literal("sacredcows").executes(SacredCowsCommands::executeHelp);
-          root.then(Commands.literal("help").executes(SacredCowsCommands::executeHelp));
+              Commands.literal("sacredcows").executes(CowCommands::executeHelp);
+          root.then(Commands.literal("help").executes(CowCommands::executeHelp));
           addBoolCommand(
               root,
               "reload_config",
@@ -87,9 +88,9 @@ public class SacredCowsCommands {
               root, "debug", this::enableDebugMode, source -> checkPermission(this.config, source));
           addEnumCommand(
               root,
-              "punishment_type",
-              PUNISHMENT_TYPE_SUGGESTIONS,
-              this::executePunishmentType,
+              "punishment_mode",
+              PUNISHMENT_MODE_SUGGESTIONS,
+              this::executePunishmentMode,
               source -> checkPermission(this.config, source));
           root.then(
               Commands.literal("stats")
@@ -125,7 +126,7 @@ public class SacredCowsCommands {
         });
   }
 
-  private static boolean checkPermission(SacredCowsConfig config, CommandSourceStack source) {
+  private static boolean checkPermission(CowConfig config, CommandSourceStack source) {
     if (source.permissions() instanceof LevelBasedPermissionSet leveled) {
       PermissionLevel sourceLevel = leveled.level();
       PermissionLevel requiredLevel = PermissionLevel.byId(config.getAdminOpLevel());
@@ -191,8 +192,8 @@ public class SacredCowsCommands {
                         + "§e/sacredcows enabled <true|false> §r- Toggle the mod\n"
                         + "§e/sacredcows debug <true|false> §r- Toggle debug mode.\n"
                         + "§e/sacredcows lightning_effect §r- Toggle lightning effect\n"
-                        + "§e/sacredcows punishment_type <death|damage|lightning_only> §r- Set"
-                        + " punishment type\n"
+                        + "§e/sacredcows punishment_mode <death|damage|lightning_only> §r- Set"
+                        + " punishment mode\n"
                         + "§e/sacredcows stats <player <name>> | global> §r- See stats for a player"
                         + " or for the whole world"),
             false);
@@ -205,7 +206,7 @@ public class SacredCowsCommands {
         : Component.literal("disabled").withStyle(ChatFormatting.RED);
   }
 
-  private <T> Component changed(T current, String saved) {
+  private <T> Component changed(T current, T saved) {
     if (saved == null) return Component.literal("");
 
     boolean equal;
@@ -290,10 +291,12 @@ public class SacredCowsCommands {
     String formattedDeathMessages = String.join("\n   ", deathMessages);
 
     // Punishment Type
-    configMessage.append(Component.literal("\nPunishment Type: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getPunishmentType());
+    configMessage.append(Component.literal("\nPunishment Mode: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(config.getPunishmentMode().toString());
     configMessage.append(
-        changed(config.getPunishmentType(), properties.getProperty("settings.punishment-type")));
+        changed(
+            config.getPunishmentMode().toString(),
+            properties.getProperty("settings.punishment-mode")));
 
     // Assault Objective
     configMessage.append(Component.literal("\nAssault Objective: ").withStyle(ChatFormatting.GRAY));
@@ -445,23 +448,38 @@ public class SacredCowsCommands {
     return 1;
   }
 
-  private int executePunishmentType(CommandContext<CommandSourceStack> ctx) {
+  private int executePunishmentMode(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
-    String value = StringArgumentType.getString(ctx, "value");
+    PunishmentMode mode;
+    try {
+      String value = StringArgumentType.getString(ctx, "value");
+      mode = PunishmentMode.fromString(value);
+    } catch (IllegalArgumentException e) {
+      LOGGER.warn(invalidPunishmentModeMessage(e.getMessage()));
+      mode = PunishmentMode.DEATH;
+    }
+    final PunishmentMode resolvedMode = mode;
+
     // Suggestions don't enforce - validate here.
-    if (!value.equals("death") && !value.equals("damage") && !value.equals("lightning_only")) {
-      ctx.getSource()
-          .sendFailure(
-              Component.literal(
-                  "Invalid punishment type: "
-                      + value
-                      + ". Must be one of: death, damage, lightning_only"));
+    if (!mode.equals(PunishmentMode.DEATH)
+        && !mode.equals(PunishmentMode.DAMAGE)
+        && !mode.equals(PunishmentMode.LIGHTNING_ONLY)) {
+      ctx.getSource().sendFailure(Component.literal(invalidPunishmentModeMessage(mode.toString())));
       return 0;
     }
-    this.config.setPunishmentType(value);
-    source.sendSuccess(() -> Component.literal("punishment_type set to " + value), true);
+    this.config.setPunishmentMode(mode);
+    source.sendSuccess(
+        () -> Component.literal("punishment-mode set to " + resolvedMode.toString().toLowerCase()),
+        true);
     displaySaveConfigMessage(source);
     return 1;
+  }
+
+  public String invalidPunishmentModeMessage(String mode) {
+    return "Invalid punishment mode: "
+        + mode
+        + ". Must be one of: 'death' OR 'kill', 'damage' OR 'hurt',"
+        + " 'lightning-only' OR 'lightning_only'.";
   }
 
   private int executeStatsPlayer(CommandContext<CommandSourceStack> ctx) {

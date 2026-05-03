@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.voidfemme.sacredcows.mixins",
+    "compatibilityLevel": "JAVA_25",
+    "mixins": [
+        "CowMilkMixin",
+        "MilkDrinkMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

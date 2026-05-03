@@ -1,7 +1,7 @@
 package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
-import com.voidfemme.sacredcows.config.SacredCowsConfig;
+import com.voidfemme.sacredcows.config.CowConfig;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.Objective;
@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
 public class ScoreboardFeature {
   private static final Logger LOGGER = LoggerFactory.getLogger("sacredcows");
   private final SacredCows owner;
-  private final SacredCowsConfig config;
+  private final CowConfig config;
 
-  public ScoreboardFeature(SacredCows owner, SacredCowsConfig config) {
+  public ScoreboardFeature(SacredCows owner, CowConfig config) {
     this.owner = owner;
     this.config = config;
   }
@@ -63,7 +63,7 @@ public class ScoreboardFeature {
     }
   }
 
-  public void trackAssault(ServerPlayer player, SacredCowsConfig config) {
+  public void trackAssault(ServerPlayer player, CowConfig config) {
     if (!config.isScoreboardEnabled() || !config.isTrackAssaultsEnabled()) return;
 
     try {
@@ -88,7 +88,7 @@ public class ScoreboardFeature {
     }
   }
 
-  public void trackKill(ServerPlayer player, SacredCowsConfig config) {
+  public void trackKill(ServerPlayer player, CowConfig config) {
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
       Objective objective = scoreboard.getObjective(config.getKillObjective());
