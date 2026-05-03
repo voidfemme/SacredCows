@@ -1,5 +1,6 @@
 # SacredCows
 
+![SacredCows Icon](src/main/resources/assets/sacredcows/icon.png)
 A configurable Fabric mod that punishes players for harming cows.
 
 ## Features
