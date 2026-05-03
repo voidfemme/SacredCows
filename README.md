@@ -1,11 +1,14 @@
 # SacredCows
 
 ![SacredCows Icon](src/main/resources/assets/sacredcows/icon.png)
-A configurable Fabric mod that punishes players for harming cows.
+A configurable Fabric mod that gives cattle divine status as stewards of the
+earth. Punishes cow-assaulters and gives cow-friends special buffs!
 
 ## Features
 
-- Configurable punishments: instant death, damage, or lightning-only
+- (NEW!) Teleport to your favorite cow by naming the cow, and milking her!
+  Drinking the milk will bring you back to your bovine companion's side.
+- Configurable punishments: (instant) death, damage, or lightning-only
 - Custom death messages with player name placeholders
 - Cosmetic lightning effects (won't harm cows)
 - Scoreboard tracking for cow assaults and kills
