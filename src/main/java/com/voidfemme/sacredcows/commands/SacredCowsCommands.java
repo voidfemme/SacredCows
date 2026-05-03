@@ -191,7 +191,7 @@ public class SacredCowsCommands {
                         + "§e/sacredcows enabled <true|false> §r- Toggle the mod\n"
                         + "§e/sacredcows debug <true|false> §r- Toggle debug mode.\n"
                         + "§e/sacredcows lightning_effect §r- Toggle lightning effect\n"
-                        + "§e/sacredcows punishment_type <death|damage|lightning_effect> §r- Set"
+                        + "§e/sacredcows punishment_type <death|damage|lightning_only> §r- Set"
                         + " punishment type\n"
                         + "§e/sacredcows stats <player <name>> | global> §r- See stats for a player"
                         + " or for the whole world"),
