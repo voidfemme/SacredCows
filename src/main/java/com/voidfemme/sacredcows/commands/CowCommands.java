@@ -382,7 +382,17 @@ public class CowCommands {
   }
 
   private int enableTeleport(CommandContext<CommandSourceStack> ctx) {
-    ctx.getSource().sendSuccess(() -> Component.literal("Milk teleportation enabled!"), false);
+    boolean value = BoolArgumentType.getBool(ctx, "value");
+    this.config.setTeleportEnabled(value);
+    String enabled = "";
+    if (value) {
+      enabled = "enabled";
+    } else {
+      enabled = "disabled";
+    }
+    String message = "Milk teleportation " + enabled;
+    ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+    displaySaveConfigMessage(ctx.getSource());
     return 1;
   }
 
@@ -406,6 +416,7 @@ public class CowCommands {
     }
     String message = "debug mode " + enabled;
     source.sendSuccess(() -> Component.literal(message), true);
+    displaySaveConfigMessage(source);
     return 1;
   }
 
