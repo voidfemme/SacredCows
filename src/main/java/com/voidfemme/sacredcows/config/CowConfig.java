@@ -18,6 +18,7 @@ public class CowConfig {
   private boolean enabled = true;
   private boolean debugEnabled = false;
   private PunishmentMode punishmentMode = PunishmentMode.DEATH;
+  private boolean teleportEnabled = true;
   private double damageAmount = 10.0;
   private boolean lightningEffectEnabled = true;
   private boolean customDeathMessagesEnabled = true;
@@ -117,6 +118,7 @@ public class CowConfig {
     properties.setProperty("settings.punishment-mode", punishmentMode.toString());
     properties.setProperty("settings.damage-amount", String.valueOf(damageAmount));
     properties.setProperty("settings.lightning-effect", String.valueOf(lightningEffectEnabled));
+    properties.setProperty("settings.teleport-enabled", String.valueOf(teleportEnabled));
     // properties.setProperty("settings.custom-death-messages", "true");
     properties.setProperty("settings.allow-bypass", String.valueOf(allowBypass));
     properties.setProperty("settings.bypass-op-level", String.valueOf(bypassOpLevel));
@@ -153,6 +155,7 @@ public class CowConfig {
     properties.setProperty("settings.punishment-mode", "DEATH");
     properties.setProperty("settings.damage-amount", "10.0");
     properties.setProperty("settings.lightning-effect", "true");
+    properties.setProperty("settings.teleport-enabled", "true");
     properties.setProperty("settings.custom-death-messages", "true");
     properties.setProperty("settings.allow-bypass", "true");
     properties.setProperty("settings.bypass-op-level", "2");
@@ -199,6 +202,7 @@ public class CowConfig {
     }
     lightningEffectEnabled =
         Boolean.parseBoolean(properties.getProperty("settings.lightning-effect", "true"));
+    teleportEnabled = Boolean.parseBoolean(properties.getProperty("settings.teleport-enabled"));
     customDeathMessagesEnabled =
         Boolean.parseBoolean(properties.getProperty("settings.custom-death-messages", "true"));
     allowBypass = Boolean.parseBoolean(properties.getProperty("settings.allow-bypass", "true"));
@@ -279,6 +283,10 @@ public class CowConfig {
     return lightningEffectEnabled;
   }
 
+  public boolean isTeleportEnabled() {
+    return teleportEnabled;
+  }
+
   public boolean isCustomDeathMessagesEnabled() {
     return customDeathMessagesEnabled;
   }
@@ -338,6 +346,10 @@ public class CowConfig {
   // == SETTERS ==
   public void setLightningEffectEnabled(boolean enabled) {
     this.lightningEffectEnabled = enabled;
+  }
+
+  public void setTeleportEnabled(boolean enabled) {
+    this.teleportEnabled = enabled;
   }
 
   public void setPunishmentMode(PunishmentMode punishmentMode) {

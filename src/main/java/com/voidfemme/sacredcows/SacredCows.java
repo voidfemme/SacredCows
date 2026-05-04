@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SacredCows implements ModInitializer {
-  public static final String MOD_ID = "sacredcows";
+  public static final String MOD_ID = "sacredcows.SacredCows";
   private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
   private static final int CLEANUP_INTERVAL_TICKS = 600; // 30 seconds
 

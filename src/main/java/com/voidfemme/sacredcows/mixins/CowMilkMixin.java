@@ -1,6 +1,8 @@
 package com.voidfemme.sacredcows.mixins;
 
+import com.voidfemme.sacredcows.SacredCows;
 import com.voidfemme.sacredcows.components.CowComponents;
+import com.voidfemme.sacredcows.config.CowConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -32,33 +34,38 @@ public class CowMilkMixin {
   @Inject(method = "mobInteract", at = @At("RETURN"))
   private void onMilked(
       Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+    CowConfig config = SacredCows.getInstance().getConfig();
+
     // cir.getReturnValue() lets you check if milking actually succeeded
     if (cir.getReturnValue() != InteractionResult.SUCCESS) return;
 
     if (player.level().isClientSide()) return;
-    ServerLevel serverLevel = (ServerLevel) player.level();
-    // Code here: player and hand are available
-    Cow cow = (Cow) (Object) this;
-    ItemStack stack = player.getItemInHand(hand);
 
-    // If it's a named cow, add the cow's Id to the bucket, and give the bucket a glint
-    if (cow.hasCustomName()) {
+    if (config.isTeleportEnabled()) {
+      ServerLevel serverLevel = (ServerLevel) player.level();
+      // Code here: player and hand are available
+      Cow cow = (Cow) (Object) this;
+      ItemStack stack = player.getItemInHand(hand);
 
-      // Create a glint on the object
-      Holder<Enchantment> enchantment =
-          serverLevel
-              .registryAccess()
-              .lookupOrThrow(Registries.ENCHANTMENT)
-              .getOrThrow(Enchantments.UNBREAKING);
-      stack.enchant(enchantment, 0);
+      // If it's a named cow, add the cow's Id to the bucket, and give the bucket a glint
+      if (cow.hasCustomName()) {
 
-      // Hide the tooltip so the player doesn't see the random enchantment name.
-      stack.set(
-          DataComponents.TOOLTIP_DISPLAY,
-          TooltipDisplay.DEFAULT.withHidden(DataComponents.ENCHANTMENTS, true));
+        // Create a glint on the object
+        Holder<Enchantment> enchantment =
+            serverLevel
+                .registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.UNBREAKING);
+        stack.enchant(enchantment, 0);
 
-      // Save the Cow's UUID to the milk bucket
-      stack.set(CowComponents.COW_ID, cow.getUUID());
+        // Hide the tooltip so the player doesn't see the random enchantment name.
+        stack.set(
+            DataComponents.TOOLTIP_DISPLAY,
+            TooltipDisplay.DEFAULT.withHidden(DataComponents.ENCHANTMENTS, true));
+
+        // Save the Cow's UUID to the milk bucket
+        stack.set(CowComponents.COW_ID, cow.getUUID());
+      }
     }
   }
 }

@@ -14,7 +14,5 @@ public class CowComponents {
           Identifier.fromNamespaceAndPath("sacredcows", "cow_id"),
           DataComponentType.<UUID>builder().persistent(UUIDUtil.CODEC).build());
 
-  public static void initialize() {
-    // Forces static fields to register during mod init.
-  }
+  public static void initialize() {}
 }

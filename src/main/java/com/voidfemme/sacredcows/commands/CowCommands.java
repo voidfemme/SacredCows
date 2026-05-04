@@ -12,6 +12,7 @@ import com.voidfemme.sacredcows.features.CowProtectionFeature.PunishmentMode;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -19,8 +20,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.permissions.LevelBasedPermissionSet;
-import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerScoreEntry;
 import net.minecraft.world.scores.ScoreHolder;
@@ -65,8 +64,8 @@ public class CowCommands {
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
           LiteralArgumentBuilder<CommandSourceStack> root =
-              Commands.literal("sacredcows").executes(CowCommands::executeHelp);
-          root.then(Commands.literal("help").executes(CowCommands::executeHelp));
+              Commands.literal("sacredcows").executes(this::executeHelp);
+          root.then(Commands.literal("help").executes(this::executeHelp));
           addBoolCommand(
               root,
               "reload_config",
@@ -86,6 +85,11 @@ public class CowCommands {
               source -> checkPermission(this.config, source));
           addBoolCommand(
               root, "debug", this::enableDebugMode, source -> checkPermission(this.config, source));
+          addBoolCommand(
+              root,
+              "enable_teleport",
+              this::enableTeleport,
+              source -> checkPermission(this.config, source));
           addEnumCommand(
               root,
               "punishment_mode",
@@ -116,7 +120,10 @@ public class CowCommands {
                                 Component.literal("Usage: /sacredcows stats <player|global>"));
                         return 0;
                       }));
-          root.then(Commands.literal("print_config").executes(this::printConfig));
+          root.then(
+              Commands.literal("print_config")
+                  .requires(source -> checkPermission(this.config, source))
+                  .executes(this::printConfig));
           root.then(
               Commands.literal("save_config")
                   .requires(source -> checkPermission(this.config, source))
@@ -127,12 +134,7 @@ public class CowCommands {
   }
 
   private static boolean checkPermission(CowConfig config, CommandSourceStack source) {
-    if (source.permissions() instanceof LevelBasedPermissionSet leveled) {
-      PermissionLevel sourceLevel = leveled.level();
-      PermissionLevel requiredLevel = PermissionLevel.byId(config.getAdminOpLevel());
-      return sourceLevel.isEqualOrHigherThan(requiredLevel);
-    }
-    return false;
+    return Permissions.check(source, config.getAdminPermission(), config.getAdminOpLevel());
   }
 
   // == REGISTRATION HELPERS ==
@@ -181,22 +183,35 @@ public class CowCommands {
   // == COMMAND IMPLEMENTATIONS ==
 
   /** Prints help text listing all available subcommands. */
-  private static int executeHelp(CommandContext<CommandSourceStack> ctx) {
-    ctx.getSource()
-        .sendSuccess(
-            () ->
-                Component.literal(
-                    "§6=== Sacred Cows Commands ===\n"
-                        + "§e/sacredcows help §r- Show this message\n"
-                        + "§e/sacredcows bypass <true|false> §r- Toggle admin bypass\n"
-                        + "§e/sacredcows enabled <true|false> §r- Toggle the mod\n"
-                        + "§e/sacredcows debug <true|false> §r- Toggle debug mode.\n"
-                        + "§e/sacredcows lightning_effect §r- Toggle lightning effect\n"
-                        + "§e/sacredcows punishment_mode <death|damage|lightning_only> §r- Set"
-                        + " punishment mode\n"
-                        + "§e/sacredcows stats <player <name>> | global> §r- See stats for a player"
-                        + " or for the whole world"),
-            false);
+  private int executeHelp(CommandContext<CommandSourceStack> ctx) {
+    if (checkPermission(config, ctx.getSource())) {
+      ctx.getSource()
+          .sendSuccess(
+              () ->
+                  Component.literal(
+                      "§6=== Sacred Cows Commands ===\n"
+                          + "§e/sacredcows help §r- Show this message\n"
+                          + "§e/sacredcows bypass <true|false> §r- Toggle admin bypass\n"
+                          + "§e/sacredcows enabled <true|false> §r- Toggle the mod\n"
+                          + "§e/sacredcows debug <true|false> §r- Toggle debug mode.\n"
+                          + "§e/sacredcows lightning_effect §r- Toggle lightning effect\n"
+                          + "§e/sacredcows punishment_mode <death|damage|lightning_only> §r- Set"
+                          + " punishment mode\n"
+                          + "§e/sacredcows stats <player <name>> | global> §r- See stats for a"
+                          + " player or for the whole world"),
+              false);
+    } else {
+      ctx.getSource()
+          .sendSuccess(
+              () ->
+                  Component.literal(
+                      "§6=== Sacred Cows Commands ===\n"
+                          + "§e/sacredcows help §r- Show this message\n"
+                          + "§e/sacredcows stats <player <name>> | global> §r- See stats for a"
+                          + " player or for the whole world"),
+              false);
+    }
+
     return 1;
   }
 
@@ -363,6 +378,11 @@ public class CowCommands {
         changed(config.getAdminOpLevel(), properties.getProperty("settings.admin-op-level")));
 
     ctx.getSource().sendSuccess(() -> configMessage, false);
+    return 1;
+  }
+
+  private int enableTeleport(CommandContext<CommandSourceStack> ctx) {
+    ctx.getSource().sendSuccess(() -> Component.literal("Milk teleportation enabled!"), false);
     return 1;
   }
 
