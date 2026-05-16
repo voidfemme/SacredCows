@@ -50,6 +50,9 @@ public class CowMilkMixin {
       // If it's a named cow, add the cow's Id to the bucket, and give the bucket a glint
       if (cow.hasCustomName()) {
 
+        // Give the bucket a unique name
+        stack.set(DataComponents.CUSTOM_NAME, cow.getCustomName());
+
         // Create a glint on the object
         Holder<Enchantment> enchantment =
             serverLevel

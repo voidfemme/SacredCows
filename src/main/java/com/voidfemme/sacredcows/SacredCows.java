@@ -3,6 +3,7 @@ package com.voidfemme.sacredcows;
 import com.voidfemme.sacredcows.commands.CowCommands;
 import com.voidfemme.sacredcows.components.CowComponents;
 import com.voidfemme.sacredcows.config.CowConfig;
+import com.voidfemme.sacredcows.features.CowChunkLoaderFeature;
 import com.voidfemme.sacredcows.features.CowProtectionFeature;
 import com.voidfemme.sacredcows.features.ScoreboardFeature;
 import java.io.IOException;
@@ -29,6 +30,7 @@ public class SacredCows implements ModInitializer {
   private CowCommands commands;
   private CowProtectionFeature cowProtectionFeature;
   private ScoreboardFeature scoreboard;
+  private CowChunkLoaderFeature cowChunkLoader;
   private int cleanupTickCounter = 0;
   public long serverTickCounter = 0;
 
@@ -54,12 +56,14 @@ public class SacredCows implements ModInitializer {
 
     // Create the cowProtectionFeature - We will need to call the supplier after the fact
     this.cowProtectionFeature = new CowProtectionFeature(this, config);
+    this.cowChunkLoader = new CowChunkLoaderFeature();
 
     // Initialize CowComponents so the mixins work
     CowComponents.initialize();
 
     // Register event handlers
     cowProtectionFeature.registerEventHandlers();
+    cowChunkLoader.registerEventHandlers();
 
     // Setup server lifecycle events
     ServerLifecycleEvents.SERVER_STARTED.register(
@@ -94,20 +98,30 @@ public class SacredCows implements ModInitializer {
   public void loadConfig() {
     try {
       Path configDir = Paths.get("config");
-      LOGGER.info("Config directory: {}", configDir.toAbsolutePath());
-      if (!Files.exists(configDir)) {
-        LOGGER.info("Config directory doesn't exist, creating it...");
-        Files.createDirectories(configDir);
+      Path configFile = configDir.resolve("sacredcows.properties");
+
+      if (config == null) {
+        // Config doesn't exist, create it:
+        LOGGER.info("Config directory: {}", configDir.toAbsolutePath());
+
+        // Create the directory if it doesn't exist
+        if (!Files.exists(configDir)) {
+          LOGGER.info("Config directory doesn't exist, creating it...");
+          Files.createDirectories(configDir);
+        }
+
+        // Create the new config
+        LOGGER.info("Config file path: {}", configFile.toAbsolutePath());
+        config = new CowConfig(null);
       }
 
-      Path configFile = configDir.resolve("sacredcows.properties");
-      LOGGER.info("Config file path: {}", configFile.toAbsolutePath());
-      config = new CowConfig(configFile);
+      // Config is guaranteed to exist now, so load it!
       config.load();
       LOGGER.info("Config loaded successfully");
     } catch (Exception e) {
+      // Config file doesn't exist anyways, create a new one and use the defaults
       LOGGER.error("Failed to load configuration, using defaults", e);
-      config = new CowConfig(null);
+      if (config == null) config = new CowConfig(null);
     }
   }
 

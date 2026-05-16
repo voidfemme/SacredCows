@@ -62,6 +62,7 @@ public class MilkDrinkMixin {
               player.getYRot(),
               player.getXRot(),
               TeleportTransition.DO_NOTHING);
+      player.setDeltaMovement(Vec3.ZERO);
       player.teleport(transition);
     }
   }

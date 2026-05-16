@@ -17,6 +17,7 @@ import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,10 @@ public class CowProtectionFeature {
     DEATH,
     DAMAGE,
     LIGHTNING_ONLY;
+
+    public String toString() {
+      return this.name().toLowerCase();
+    }
 
     public static PunishmentMode fromString(String s) {
       return switch (s.toLowerCase()) {
@@ -82,9 +87,10 @@ public class CowProtectionFeature {
         (entity, source, amount) -> {
           if (!config.isEnabled()) return true;
 
-          // Check if entity is a cow and damage source is a player
+          // Check if entity is a cow
           if (!(entity instanceof Cow)) return true;
 
+          // Check if damage source is a player
           ServerPlayer player = getPlayerFromDamageSource(source);
           if (player == null) return true;
 
@@ -120,18 +126,27 @@ public class CowProtectionFeature {
           // Apply punishment
           applyPunishment(player);
 
-          // Cancel damage
-          return false;
+          // Cancel damage?
+          return !config.isCowInvincibilityEnabled();
         });
 
     // Handle entity death for kill tracking
     ServerLivingEntityEvents.AFTER_DEATH.register(
         (entity, source) -> {
-          // If config is not enabled or if we are not tracking kills, return without doing anything
-          if (!config.isEnabled() || !config.isTrackKillsEnabled()) return;
+          // If config is not enabled, return without doing anything
+          if (!config.isEnabled()) return;
 
           // If the entity is not a cow, return without doing anything
-          if (!(entity instanceof Cow)) return;
+          if (!(entity instanceof Cow cow)) return;
+
+          // Unforce the chunk when a named cow dies
+          if (cow.hasCustomName() && entity.level() instanceof ServerLevel serverLevel) {
+            ChunkPos chunkPos = ChunkPos.containing(cow.blockPosition());
+            serverLevel.setChunkForced(chunkPos.getBlockX(0), chunkPos.getBlockZ(0), false);
+          }
+
+          // If we are not tracking kills, return without doing anything
+          if (!config.isTrackKillsEnabled()) return;
 
           ServerPlayer player = getPlayerFromDamageSource(source);
           if (player != null) {
@@ -179,7 +194,7 @@ public class CowProtectionFeature {
 
       case PunishmentMode.DAMAGE:
         try {
-          float damage = (float) config.getDamageAmount();
+          float damage = (float) config.getPlayerDamageAmount();
           player.hurtServer(world, player.damageSources().generic(), damage);
           if (config.isDebugEnabled()) {
             LOGGER.info("Applied {} damage to {}", damage, player.getName().getString());

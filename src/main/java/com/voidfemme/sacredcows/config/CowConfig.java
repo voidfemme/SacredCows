@@ -19,10 +19,12 @@ public class CowConfig {
   private boolean debugEnabled = false;
   private PunishmentMode punishmentMode = PunishmentMode.DEATH;
   private boolean teleportEnabled = true;
-  private double damageAmount = 10.0;
+  private double playerDamageAmount = 10.0;
   private boolean lightningEffectEnabled = true;
   private boolean customDeathMessagesEnabled = true;
-  private boolean allowBypass = true;
+  private boolean cowInvincibility = false;
+  private double cowHealth = 20.0;
+  private boolean bypassEnabled = true;
   private int bypassOpLevel = 2;
   private int adminOpLevel = 2;
 
@@ -88,15 +90,29 @@ public class CowConfig {
       // Ensure parent directories exist
       Files.createDirectories(configFile.getParent());
 
-      // Create default properties
-      properties.clear();
-      setDefaultProperties();
-
-      // Save to file
-      try (OutputStream output = Files.newOutputStream(configFile)) {
-        properties.store(output, "sacredcows Configuration File");
+      try (BufferedWriter writer = Files.newBufferedWriter(configFile)) {
+        writer.write("# Sacred Cows Configuration");
+        writer.newLine();
+        for (SettingsEnum key : SettingsEnum.values()) {
+          writer.write("# " + key.getComment());
+          writer.newLine();
+          writer.write(key.toLongString() + "=" + key.getDefault());
+          writer.newLine();
+        }
+        for (ScoreboardEnum key : ScoreboardEnum.values()) {
+          writer.write("# " + key.getComment());
+          writer.newLine();
+          writer.write(key.toLongString() + "=" + key.getDefault());
+          writer.newLine();
+        }
+        for (PermissionsEnum key : PermissionsEnum.values()) {
+          writer.write("# " + key.getComment());
+          writer.newLine();
+          writer.write(key.toLongString() + "=" + key.getDefault());
+          writer.newLine();
+        }
       }
-
+      load();
       parseProperties();
     } catch (IOException e) {
       System.err.println("Error creating default config file: " + e.getMessage());
@@ -113,66 +129,67 @@ public class CowConfig {
 
     // Save properties
     // General Settings
-    properties.setProperty("settings.enabled", String.valueOf(enabled));
-    properties.setProperty("settings.debug", String.valueOf(debugEnabled));
-    properties.setProperty("settings.punishment-mode", punishmentMode.toString());
-    properties.setProperty("settings.damage-amount", String.valueOf(damageAmount));
-    properties.setProperty("settings.lightning-effect", String.valueOf(lightningEffectEnabled));
-    properties.setProperty("settings.teleport-enabled", String.valueOf(teleportEnabled));
-    // properties.setProperty("settings.custom-death-messages", "true");
-    properties.setProperty("settings.allow-bypass", String.valueOf(allowBypass));
-    properties.setProperty("settings.bypass-op-level", String.valueOf(bypassOpLevel));
-    properties.setProperty("settings.admin-op-level", String.valueOf(adminOpLevel));
+    properties.setProperty(SettingsEnum.MOD_ENABLED.toLongString(), String.valueOf(enabled));
+    properties.setProperty(SettingsEnum.DEBUG.toLongString(), String.valueOf(debugEnabled));
+    properties.setProperty(SettingsEnum.PUNISHMENT_MODE.toLongString(), punishmentMode.toString());
+    properties.setProperty(
+        SettingsEnum.PLAYER_DAMAGE_AMOUNT.toLongString(), String.valueOf(playerDamageAmount));
+    properties.setProperty(
+        SettingsEnum.LIGHTNING_EFFECT.toLongString(), String.valueOf(lightningEffectEnabled));
+    properties.setProperty(
+        SettingsEnum.TELEPORT_ENABLED.toLongString(), String.valueOf(teleportEnabled));
+    properties.setProperty(
+        SettingsEnum.COW_INVINCIBILITY.toLongString(), String.valueOf(cowInvincibility));
+    properties.setProperty(SettingsEnum.COW_HEALTH.toLongString(), String.valueOf(cowHealth));
+    // properties.setProperSettingsEnum.ENUM.togs.custom-death-messages", "true");
+    properties.setProperty(SettingsEnum.ALLOW_BYPASS.toLongString(), String.valueOf(bypassEnabled));
+    properties.setProperty(
+        SettingsEnum.BYPASS_OP_LEVEL.toLongString(), String.valueOf(bypassOpLevel));
+    properties.setProperty(
+        SettingsEnum.ADMIN_OP_LEVEL.toLongString(), String.valueOf(adminOpLevel));
 
     // Scoreboard Settings
-    properties.setProperty("scoreboard.enabled", String.valueOf(scoreboardEnabled));
-    properties.setProperty("scoreboard.track-assaults", String.valueOf(trackAssaultsEnabled));
-    properties.setProperty("scoreboard.track-kills", String.valueOf(trackKillsEnabled));
-    properties.setProperty("scoreboard.assault-objective", assaultObjective);
-    properties.setProperty("scoreboard.kill-objective", killObjective);
-    properties.setProperty("scoreboard.assault-display", assaultDisplay);
-    properties.setProperty("scoreboard.kill-display", killDisplay);
+    properties.setProperty(
+        ScoreboardEnum.SCOREBOARD_ENABLED.toLongString(), String.valueOf(scoreboardEnabled));
+    properties.setProperty(
+        ScoreboardEnum.TRACK_ASSAULTS.toLongString(), String.valueOf(trackAssaultsEnabled));
+    properties.setProperty(
+        ScoreboardEnum.TRACK_KILLS.toLongString(), String.valueOf(trackKillsEnabled));
+    properties.setProperty(ScoreboardEnum.ASSAULT_OBJECTIVE.toLongString(), assaultObjective);
+    properties.setProperty(ScoreboardEnum.KILL_OBJECTIVE.toLongString(), killObjective);
+    properties.setProperty(ScoreboardEnum.ASSAULT_DISPLAY.toLongString(), assaultDisplay);
+    properties.setProperty(ScoreboardEnum.KILL_DISPLAY.toLongString(), killDisplay);
 
     // Permissions
-    // properties.setProperty("permissions.bypass-permission", "sacredcows.bypass");
-    // properties.setProperty("permissions.admin-permission", "sacredcows.admin");
+    properties.setProperty(PermissionsEnum.BYPASS_PERMISSION.toLongString(), "sacredcows.bypass");
+    properties.setProperty(PermissionsEnum.ADMIN_PERMISSION.toLongString(), "sacredcows.admin");
 
     // Death Messages
-    // for (int i = 0; i < deathMessages.size(); i++) {
-    //     properties.setProperty("death-messages." + i, deathMessages.get(i));
-    // }
+    for (int i = 0; i < deathMessages.size(); i++) {
+      properties.setProperty("death-messages." + i, deathMessages.get(i));
+    }
 
     // Save to file
     try (OutputStream output = Files.newOutputStream(configFile)) {
-      properties.store(output, "sacredcows Configuration File");
+      properties.store(output, "Sacred Cows Configuration File");
     }
   }
 
   private void setDefaultProperties() {
     // General Settings
-    properties.setProperty("settings.enabled", "true");
-    properties.setProperty("settings.debug", "false");
-    properties.setProperty("settings.punishment-mode", "DEATH");
-    properties.setProperty("settings.damage-amount", "10.0");
-    properties.setProperty("settings.lightning-effect", "true");
-    properties.setProperty("settings.teleport-enabled", "true");
-    properties.setProperty("settings.custom-death-messages", "true");
-    properties.setProperty("settings.allow-bypass", "true");
-    properties.setProperty("settings.bypass-op-level", "2");
-    properties.setProperty("settings.admin-op-level", "2");
+    for (SettingsEnum key : SettingsEnum.values()) {
+      properties.setProperty(key.toLongString(), key.getDefault());
+    }
 
     // Scoreboard Settings
-    properties.setProperty("scoreboard.enabled", "true");
-    properties.setProperty("scoreboard.track-assaults", "true");
-    properties.setProperty("scoreboard.track-kills", "true");
-    properties.setProperty("scoreboard.assault-objective", "cowAssaults");
-    properties.setProperty("scoreboard.kill-objective", "cowKills");
-    properties.setProperty("scoreboard.assault-display", "Cow Assaults");
-    properties.setProperty("scoreboard.kill-display", "Cow Kills");
+    for (ScoreboardEnum key : ScoreboardEnum.values()) {
+      properties.setProperty(key.toLongString(), key.getDefault());
+    }
 
     // Permissions
-    properties.setProperty("permissions.bypass-permission", "sacredcows.bypass");
-    properties.setProperty("permissions.admin-permission", "sacredcows.admin");
+    for (PermissionsEnum key : PermissionsEnum.values()) {
+      properties.setProperty(key.toLongString(), key.getDefault());
+    }
 
     // Death Messages
     for (int i = 0; i < deathMessages.size(); i++) {
@@ -180,85 +197,78 @@ public class CowConfig {
     }
   }
 
-  private void parseProperties() {
-    // General settings
-    enabled = Boolean.parseBoolean(properties.getProperty("settings.enabled", "true"));
-    debugEnabled = Boolean.parseBoolean(properties.getProperty("settings.debug", "false"));
+  private String get(CowConfigKeys key) {
+    return properties.getProperty(key.toLongString(), key.getDefault());
+  }
+
+  private boolean getBool(CowConfigKeys key) {
+    return Boolean.parseBoolean(get(key));
+  }
+
+  private int getInt(CowConfigKeys key) {
     try {
-      punishmentMode =
-          PunishmentMode.fromString(properties.getProperty("settings.punishment-mode", "death"));
+      return Integer.parseInt(get(key));
+    } catch (NumberFormatException e) {
+      LOGGER.warn(
+          "Invalid integer for '{}', defaulting to {}", key.toLongString(), key.getDefault());
+      return Integer.parseInt(key.getDefault());
+    }
+  }
+
+  private double getDouble(CowConfigKeys key) {
+    try {
+      return Double.parseDouble(get(key));
+    } catch (NumberFormatException e) {
+      LOGGER.warn(
+          "Invalid double for '{}', defaulting to {}", key.toLongString(), key.getDefault());
+      return Double.parseDouble(key.getDefault());
+    }
+  }
+
+  private void parseProperties() {
+    enabled = getBool(SettingsEnum.MOD_ENABLED);
+    debugEnabled = getBool(SettingsEnum.DEBUG);
+    playerDamageAmount = getDouble(SettingsEnum.PLAYER_DAMAGE_AMOUNT);
+    bypassOpLevel = getInt(SettingsEnum.BYPASS_OP_LEVEL);
+    adminOpLevel = getInt(SettingsEnum.ADMIN_OP_LEVEL);
+    lightningEffectEnabled = getBool(SettingsEnum.LIGHTNING_EFFECT);
+    teleportEnabled = getBool(SettingsEnum.TELEPORT_ENABLED);
+    cowInvincibility = getBool(SettingsEnum.COW_INVINCIBILITY);
+    cowHealth = getDouble(SettingsEnum.COW_HEALTH);
+    bypassEnabled = getBool(SettingsEnum.ALLOW_BYPASS);
+
+    try {
+      punishmentMode = PunishmentMode.fromString(get(SettingsEnum.PUNISHMENT_MODE));
     } catch (IllegalArgumentException e) {
       LOGGER.warn(
-          "Invalid value for 'settings.punishment-mode': {}. Defaulting to 'DEATH'.",
-          e.getMessage());
-      punishmentMode = PunishmentMode.DEATH;
-    }
-    try {
-      damageAmount = Double.parseDouble(properties.getProperty("settings.damage-amount", "10.0"));
-    } catch (NumberFormatException e) {
-      LOGGER.warn(
-          "Not a valid double for value 'settings.damage-amount': {}. Defaulting to '10.0'.");
-      damageAmount = 10.0;
-    }
-    lightningEffectEnabled =
-        Boolean.parseBoolean(properties.getProperty("settings.lightning-effect", "true"));
-    teleportEnabled = Boolean.parseBoolean(properties.getProperty("settings.teleport-enabled"));
-    customDeathMessagesEnabled =
-        Boolean.parseBoolean(properties.getProperty("settings.custom-death-messages", "true"));
-    allowBypass = Boolean.parseBoolean(properties.getProperty("settings.allow-bypass", "true"));
-    // `parseInt()` and `parseDouble()` will throw `NumberFormatException`
-    try {
-      bypassOpLevel = Integer.parseInt(properties.getProperty("settings.bypass-op-level", "2"));
-    } catch (NumberFormatException e) {
-      LOGGER.warn(
-          "Not a valid integer for value 'settings.bypass-op-level': {}. Defaulting to '2'.",
-          e.getMessage());
-      bypassOpLevel = 2;
-    }
-    try {
-      adminOpLevel = Integer.parseInt(properties.getProperty("settings.admin-op-level", "2"));
-    } catch (NumberFormatException e) {
-      LOGGER.warn(
-          "Not a valid integer for value 'settings.admin-op-level': {}. Defaulting to '2'.",
-          e.getMessage());
-      adminOpLevel = 2;
+          "Invalid punishment mode '{}', defaulting to {}",
+          e.getMessage(),
+          SettingsEnum.PUNISHMENT_MODE.getDefault());
+      punishmentMode = PunishmentMode.fromString(SettingsEnum.PUNISHMENT_MODE.getDefault());
     }
 
-    // Scoreboard settings
-    scoreboardEnabled = Boolean.parseBoolean(properties.getProperty("scoreboard.enabled", "true"));
-    trackAssaultsEnabled =
-        Boolean.parseBoolean(properties.getProperty("scoreboard.track-assaults", "true"));
-    trackKillsEnabled =
-        Boolean.parseBoolean(properties.getProperty("scoreboard.track-kills", "true"));
-    assaultObjective = properties.getProperty("scoreboard.assault-objective", "cowAssaults");
-    killObjective = properties.getProperty("scoreboard.kill-objective", "cowKills");
-    assaultDisplay = properties.getProperty("scoreboard.assault-display", "Cow Assaults");
-    killDisplay = properties.getProperty("scoreboard.kill-display", "Cow Kills");
+    scoreboardEnabled = getBool(ScoreboardEnum.SCOREBOARD_ENABLED);
+    trackAssaultsEnabled = getBool(ScoreboardEnum.TRACK_ASSAULTS);
+    trackKillsEnabled = getBool(ScoreboardEnum.TRACK_KILLS);
+    assaultObjective = get(ScoreboardEnum.ASSAULT_OBJECTIVE);
+    killObjective = get(ScoreboardEnum.KILL_OBJECTIVE);
+    assaultDisplay = get(ScoreboardEnum.ASSAULT_DISPLAY);
+    killDisplay = get(ScoreboardEnum.KILL_DISPLAY);
 
-    // Permissions
-    bypassPermission = properties.getProperty("permissions.bypass-permission", "sacredcows.bypass");
-    adminPermission = properties.getProperty("permissions.admin-permission", "sacredcows.admin");
+    bypassPermission = get(PermissionsEnum.BYPASS_PERMISSION);
+    adminPermission = get(PermissionsEnum.ADMIN_PERMISSION);
 
-    // Death messages
+    // Death messages (structurally different, handled separately)
     deathMessages = new ArrayList<>();
-    for (int i = 0; i < 100; i++) { // Check up to 100 death messages
+    for (int i = 0; i < 100; i++) {
       String message = properties.getProperty("death-messages." + i);
       if (message != null && !message.trim().isEmpty()) {
         deathMessages.add(message);
-      } else {
-        break;
-      }
+      } else break;
     }
 
-    // If no death messages found, use defaults
     if (deathMessages.isEmpty()) {
-      deathMessages =
-          Arrays.asList(
-              "%player% was moo-rdered for their bovine crimes",
-              "%player% faced divine bovine retribution",
-              "The cows fought back, and %player% lost",
-              "%player% learned the hard way not to mess with cows",
-              "A mysterious force struck down %player% for harming a cow");
+      deathMessages = Arrays.asList("%player% was moo-rdered for their bovine crimes.");
     }
   }
 
@@ -275,16 +285,24 @@ public class CowConfig {
     return punishmentMode;
   }
 
-  public double getDamageAmount() {
-    return damageAmount;
-  }
-
   public boolean isLightningEffectEnabled() {
     return lightningEffectEnabled;
   }
 
   public boolean isTeleportEnabled() {
     return teleportEnabled;
+  }
+
+  public boolean isCowInvincibilityEnabled() {
+    return cowInvincibility;
+  }
+
+  public double getCowHealth() {
+    return cowHealth;
+  }
+
+  public double getPlayerDamageAmount() {
+    return playerDamageAmount;
   }
 
   public boolean isCustomDeathMessagesEnabled() {
@@ -304,7 +322,7 @@ public class CowConfig {
   }
 
   public boolean isAllowBypass() {
-    return allowBypass;
+    return bypassEnabled;
   }
 
   public int getBypassOpLevel() {
@@ -344,59 +362,228 @@ public class CowConfig {
   }
 
   // == SETTERS ==
-  public void setLightningEffectEnabled(boolean enabled) {
-    this.lightningEffectEnabled = enabled;
-  }
-
-  public void setTeleportEnabled(boolean enabled) {
-    this.teleportEnabled = enabled;
-  }
-
-  public void setPunishmentMode(PunishmentMode punishmentMode) {
-    this.punishmentMode = punishmentMode;
-  }
-
-  public void setBypassOpLevel(int level) {
-    this.bypassOpLevel = level;
-  }
-
-  public void setAdminOpLevel(int level) {
-    this.adminOpLevel = level;
-  }
-
-  public void setAssaultObjective(String objective) {
-    this.assaultObjective = objective;
-  }
-
-  public void setKillObjective(String objective) {
-    this.killObjective = objective;
-  }
-
-  public void setAssaultDisplay(String display) {
-    this.assaultDisplay = display;
-  }
-
-  public void setKillDisplay(String display) {
-    this.killDisplay = display;
-  }
-
-  public void setBypassPermission(String allow) {
-    this.bypassPermission = allow;
-  }
-
-  public void setAllowBypass(boolean allow) {
-    this.allowBypass = allow;
-  }
-
-  public void setEnabled(boolean enabled) {
+  public void setModEnabled(boolean enabled, boolean apply) {
     this.enabled = enabled;
+    if (apply) {
+      properties.setProperty(SettingsEnum.MOD_ENABLED.toLongString(), String.valueOf(enabled));
+    }
   }
 
-  public void setAdminPermission(String permission) {
-    this.adminPermission = permission;
+  public void setModEnabled(boolean enabled) {
+    setModEnabled(enabled, false);
+  }
+
+  public void setDebugEnabled(boolean enabled, boolean apply) {
+    this.debugEnabled = enabled;
+    if (apply) {
+      properties.setProperty(SettingsEnum.DEBUG.toLongString(), String.valueOf(enabled));
+    }
   }
 
   public void setDebugEnabled(boolean enabled) {
-    this.debugEnabled = enabled;
+    setDebugEnabled(enabled, false);
+  }
+
+  public void setPunishmentMode(PunishmentMode mode, boolean apply) {
+    this.punishmentMode = mode;
+    if (apply) {
+      properties.setProperty(SettingsEnum.PUNISHMENT_MODE.toLongString(), mode.toString());
+    }
+  }
+
+  public void setPunishmentMode(PunishmentMode mode) {
+    setPunishmentMode(mode, false);
+  }
+
+  public void setPlayerDamageAmount(double amount, boolean apply) {
+    this.playerDamageAmount = amount;
+    if (apply) {
+      properties.setProperty(
+          SettingsEnum.PLAYER_DAMAGE_AMOUNT.toLongString(), String.valueOf(amount));
+    }
+  }
+
+  public void setPlayerDamageAmount(double amount) {
+    setPlayerDamageAmount(amount, false);
+  }
+
+  public void setLightningModeEnabled(boolean enabled, boolean apply) {
+    this.lightningEffectEnabled = enabled;
+    if (apply) {
+      properties.setProperty(SettingsEnum.LIGHTNING_EFFECT.toLongString(), String.valueOf(enabled));
+    }
+  }
+
+  public void setLightningModeEnabled(boolean enabled) {
+    setLightningModeEnabled(enabled, false);
+  }
+
+  public void setTeleportEnabled(boolean enabled, boolean apply) {
+    this.teleportEnabled = enabled;
+    if (apply) {
+      properties.setProperty(SettingsEnum.TELEPORT_ENABLED.toLongString(), String.valueOf(enabled));
+    }
+  }
+
+  public void setTeleportEnabled(boolean enabled) {
+    setTeleportEnabled(enabled, false);
+  }
+
+  public void setCowInvincibilityEnabled(boolean enabled, boolean apply) {
+    this.cowInvincibility = enabled;
+    if (apply) {
+      properties.setProperty(
+          SettingsEnum.COW_INVINCIBILITY.toLongString(), String.valueOf(enabled));
+    }
+  }
+
+  public void setCowInvincibilityEnabled(boolean enabled) {
+    setCowInvincibilityEnabled(enabled, false);
+  }
+
+  public void setCowHealth(double max_health, boolean apply) {
+    this.cowHealth = max_health;
+    if (apply) {
+      properties.setProperty(SettingsEnum.COW_HEALTH.toLongString(), String.valueOf(max_health));
+    }
+  }
+
+  public void setCowHealth(double max_health) {
+    setCowHealth(max_health, false);
+  }
+
+  public void setBypassEnabled(boolean enabled, boolean apply) {
+    this.bypassEnabled = enabled;
+    if (apply) {
+      properties.setProperty(
+          SettingsEnum.ALLOW_BYPASS.toLongString(), String.valueOf(bypassEnabled));
+    }
+  }
+
+  public void setBypassEnabled(boolean enabled) {
+    setBypassEnabled(enabled, false);
+  }
+
+  public void setBypassOpLevel(int level, boolean apply) {
+    this.bypassOpLevel = level;
+    if (apply) {
+      properties.setProperty(SettingsEnum.BYPASS_OP_LEVEL.toLongString(), String.valueOf(level));
+    }
+  }
+
+  public void setBypassOpLevel(int level) {
+    setBypassOpLevel(level, false);
+  }
+
+  public void setAdminOpLevel(int level, boolean apply) {
+    this.adminOpLevel = level;
+    if (apply) {
+      properties.setProperty(SettingsEnum.ADMIN_OP_LEVEL.toLongString(), String.valueOf(level));
+    }
+  }
+
+  public void setAdminOpLevel(int level) {
+    setAdminOpLevel(level, false);
+  }
+
+  public void setScoreboardEnabled(boolean enabled, boolean apply) {
+    this.scoreboardEnabled = enabled;
+    if (apply) {
+      properties.setProperty(
+          ScoreboardEnum.SCOREBOARD_ENABLED.toLongString(), String.valueOf(enabled));
+    }
+  }
+
+  public void setScoreboardEnabled(boolean enabled) {
+    setScoreboardEnabled(enabled, false);
+  }
+
+  public void setTrackAssaultsEnabled(boolean enabled, boolean apply) {
+    this.trackAssaultsEnabled = enabled;
+    if (apply) {
+      properties.setProperty(ScoreboardEnum.TRACK_ASSAULTS.toLongString(), String.valueOf(enabled));
+    }
+  }
+
+  public void setTrackAssaultsEnabled(boolean enabled) {
+    setTrackAssaultsEnabled(enabled, false);
+  }
+
+  public void setTrackKillsEnabled(boolean enabled, boolean apply) {
+    this.trackKillsEnabled = enabled;
+    if (apply) {
+      properties.setProperty(ScoreboardEnum.TRACK_KILLS.toLongString(), String.valueOf(enabled));
+    }
+  }
+
+  public void setTrackKillsEnabled(boolean enabled) {
+    setTrackKillsEnabled(enabled, false);
+  }
+
+  public void setAssaultObjective(String objective, boolean apply) {
+    this.assaultObjective = objective;
+    if (apply) {
+      properties.setProperty(
+          ScoreboardEnum.ASSAULT_OBJECTIVE.toLongString(), String.valueOf(objective));
+    }
+  }
+
+  public void setAssaultObjective(String objective) {
+    setAssaultObjective(objective, false);
+  }
+
+  public void setKillObjective(String objective, boolean apply) {
+    this.killObjective = objective;
+    if (apply) {
+      properties.setProperty(ScoreboardEnum.KILL_OBJECTIVE.toLongString(), objective);
+    }
+  }
+
+  public void setKillObjective(String objective) {
+    setKillObjective(objective, false);
+  }
+
+  public void setAssaultDisplay(String display, boolean apply) {
+    this.assaultDisplay = display;
+    if (apply) {
+      properties.setProperty(ScoreboardEnum.ASSAULT_DISPLAY.toLongString(), display);
+    }
+  }
+
+  public void setAssaultDisplay(String display) {
+    setAssaultDisplay(display, false);
+  }
+
+  public void setKillDisplay(String display, boolean apply) {
+    this.killDisplay = display;
+    if (apply) {
+      properties.setProperty(ScoreboardEnum.KILL_DISPLAY.toLongString(), display);
+    }
+  }
+
+  public void setKillDisplay(String display) {
+    setKillDisplay(display, false);
+  }
+
+  public void setBypassPermission(String permission, boolean apply) {
+    this.bypassPermission = permission;
+    if (apply) {
+      properties.setProperty(PermissionsEnum.BYPASS_PERMISSION.toLongString(), permission);
+    }
+  }
+
+  public void setBypassPermission(String permission) {
+    setBypassPermission(permission, false);
+  }
+
+  public void setAdminPermission(String permission, boolean apply) {
+    this.adminPermission = permission;
+    if (apply) {
+      properties.setProperty(PermissionsEnum.ADMIN_PERMISSION.toLongString(), permission);
+    }
+  }
+
+  public void setAdminPermission(String permission) {
+    setAdminPermission(permission, false);
   }
 }

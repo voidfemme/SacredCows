@@ -2,12 +2,15 @@ package com.voidfemme.sacredcows.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.voidfemme.sacredcows.SacredCows;
 import com.voidfemme.sacredcows.config.CowConfig;
+import com.voidfemme.sacredcows.config.SettingsEnum;
 import com.voidfemme.sacredcows.features.CowProtectionFeature.PunishmentMode;
 import java.io.IOException;
 import java.util.*;
@@ -42,11 +45,12 @@ public class CowCommands {
   // Replace or expand the list below with whatever values make sense for your command.
   private static final SuggestionProvider<CommandSourceStack> PUNISHMENT_MODE_SUGGESTIONS =
       (context, builder) -> {
-        builder.suggest("death");
-        builder.suggest("damage");
-        builder.suggest("lightning_only");
+        for (PunishmentMode mode : PunishmentMode.values()) {
+          builder.suggest(mode.toString());
+        }
         return builder.buildFuture();
       };
+
   private static final SuggestionProvider<CommandSourceStack> PLAYER_NAME_SUGGESTIONS =
       (context, builder) ->
           SharedSuggestionProvider.suggest(context.getSource().getOnlinePlayerNames(), builder);
@@ -68,33 +72,76 @@ public class CowCommands {
           root.then(Commands.literal("help").executes(this::executeHelp));
           addBoolCommand(
               root,
-              "reload_config",
-              this::executeReloadConfig,
-              source -> checkPermission(this.config, source));
-          addBoolCommand(
-              root, "bypass", this::executeBypass, source -> checkPermission(this.config, source));
-          addBoolCommand(
-              root,
-              "enabled",
-              this::executeEnabled,
+              "bypass_enabled",
+              this::executeBypassEnabled,
               source -> checkPermission(this.config, source));
           addBoolCommand(
               root,
-              "lightning_effect",
-              this::executeLightningEffect,
+              "mod_enabled",
+              this::executeModEnabled,
               source -> checkPermission(this.config, source));
           addBoolCommand(
-              root, "debug", this::enableDebugMode, source -> checkPermission(this.config, source));
+              root,
+              "lightning_effect_enabled",
+              this::executeLightningEffectEnabled,
+              source -> checkPermission(this.config, source));
           addBoolCommand(
               root,
-              "enable_teleport",
+              "debug_enabled",
+              this::enableDebugMode,
+              source -> checkPermission(this.config, source));
+          addBoolCommand(
+              root,
+              "teleport_enabled",
               this::enableTeleport,
+              source -> checkPermission(this.config, source));
+          addBoolCommand(
+              root,
+              "cow_invincibility_enabled",
+              this::executeCowInvincibilityEnabled,
+              source -> checkPermission(this.config, source));
+          addBoolCommand(
+              root,
+              "scoreboard_enabled",
+              this::executeScoreboardEnabled,
+              source -> checkPermission(this.config, source));
+          addBoolCommand(
+              root,
+              "track_assaults_enabled",
+              this::executeTrackAssaultsEnabled,
+              source -> checkPermission(this.config, source));
+          addBoolCommand(
+              root,
+              "track_kills_enabled",
+              this::executeTrackKillsEnabled,
+              source -> checkPermission(this.config, source));
+          addIntegerCommand(
+              root,
+              "set_bypass_level",
+              this::executeSetBypassLevel,
+              source -> checkPermission(this.config, source));
+          addIntegerCommand(
+              root,
+              "set_admin_level",
+              this::executeSetAdminLevel,
+              source -> checkPermission(this.config, source));
+
+          // TODO: Be able to change all cows' maximum health
+          // addDoubleCommand(
+          //     root,
+          //     "cow_health",
+          //     this::executeSetCowHealth,
+          //     source -> checkPermission(this.config, source));
+          addDoubleCommand(
+              root,
+              "set_player_damage_amount",
+              this::executeSetPlayerDamageAmount,
               source -> checkPermission(this.config, source));
           addEnumCommand(
               root,
               "punishment_mode",
               PUNISHMENT_MODE_SUGGESTIONS,
-              this::executePunishmentMode,
+              this::executeSetPunishmentMode,
               source -> checkPermission(this.config, source));
           root.then(
               Commands.literal("stats")
@@ -103,7 +150,7 @@ public class CowCommands {
                           .then(
                               Commands.argument("name", StringArgumentType.word())
                                   .suggests(PLAYER_NAME_SUGGESTIONS)
-                                  .executes(this::executeStatsPlayer))
+                                  .executes(this::executePrintPlayerStats))
                           .executes(
                               ctx -> {
                                 ctx.getSource()
@@ -112,7 +159,7 @@ public class CowCommands {
                                             "Usage: /sacredcows stats player <name>"));
                                 return 0;
                               }))
-                  .then(Commands.literal("global").executes(this::executeStatsGlobal))
+                  .then(Commands.literal("global").executes(this::executePrintGlobalStats))
                   .executes(
                       ctx -> {
                         ctx.getSource()
@@ -120,6 +167,10 @@ public class CowCommands {
                                 Component.literal("Usage: /sacredcows stats <player|global>"));
                         return 0;
                       }));
+          root.then(
+              Commands.literal("reload_config")
+                  .requires(source -> checkPermission(this.config, source))
+                  .executes(this::executeReloadConfig));
           root.then(
               Commands.literal("print_config")
                   .requires(source -> checkPermission(this.config, source))
@@ -180,6 +231,40 @@ public class CowCommands {
                 }));
   }
 
+  private static void addDoubleCommand(
+      LiteralArgumentBuilder<CommandSourceStack> root,
+      String name,
+      Command<CommandSourceStack> executor,
+      Predicate<CommandSourceStack> permission) {
+    root.then(
+        Commands.literal(name)
+            .requires(permission)
+            .then(Commands.argument("value", DoubleArgumentType.doubleArg()).executes(executor))
+            .executes(
+                ctx -> {
+                  ctx.getSource()
+                      .sendFailure(Component.literal("Usage: /sacredcows " + name + " <value>"));
+                  return 0;
+                }));
+  }
+
+  private static void addIntegerCommand(
+      LiteralArgumentBuilder<CommandSourceStack> root,
+      String name,
+      Command<CommandSourceStack> executor,
+      Predicate<CommandSourceStack> permission) {
+    root.then(
+        Commands.literal(name)
+            .requires(permission)
+            .then(Commands.argument("value", IntegerArgumentType.integer()).executes(executor))
+            .executes(
+                ctx -> {
+                  ctx.getSource()
+                      .sendFailure(Component.literal("Usage: /sacredcows " + name + " <value>"));
+                  return 0;
+                }));
+  }
+
   // == COMMAND IMPLEMENTATIONS ==
 
   /** Prints help text listing all available subcommands. */
@@ -190,15 +275,33 @@ public class CowCommands {
               () ->
                   Component.literal(
                       "§6=== Sacred Cows Commands ===\n"
+                          + "§e/sacredcows mod_enabled <true|false> §r- Toggle the mod\n"
                           + "§e/sacredcows help §r- Show this message\n"
-                          + "§e/sacredcows bypass <true|false> §r- Toggle admin bypass\n"
-                          + "§e/sacredcows enabled <true|false> §r- Toggle the mod\n"
-                          + "§e/sacredcows debug <true|false> §r- Toggle debug mode.\n"
-                          + "§e/sacredcows lightning_effect §r- Toggle lightning effect\n"
+                          + "§e/sacredcows reload_config §r- Reload the configuration from file\n"
+                          + "§e/sacredcows save_config §r- Save the configuration to file\n"
+                          + "§e/sacredcows print_config §r- Print the currently active config.\n"
+                          + "§e/sacredcows bypass_enabled <true|false> §r- Toggle admin bypass\n"
+                          + "§e/sacredcows debug_enabled <true|false> §r- Toggle debug mode.\n"
+                          + "§e/sacredcows lightning_effect_enabled <true|false> §r- Toggle"
+                          + " lightning effect\n"
+                          + "§e/sacredcows teleport_enabled <true|false> §r- Toggle milk"
+                          + " teleportation.\n"
+                          + "§e/sacredcows cow_invincibility_enabled <true|false> §r- Toggle cow"
+                          + " invincibility.\n"
+                          // + "§e/sacredcows cow_health <double> §r- Set max cow health.\n"
+                          + "§e/sacredcows scoreboard_enabled <true|false> §r- Toggle the"
+                          + " scoreboard.\n"
+                          + "§e/sacredcows track_assaults_enabled <true|false> §r- Toggle tracking"
+                          + " of cow assaults\n"
+                          + "§e/sacredcows track_kills_enabled <true|false> §r- Toggle tracking of"
+                          + " cow kills\n"
+                          + "§e/sacredcows set_bypass_level <int> §r- Set bypass permission"
+                          + " level.\n"
+                          + "§e/sacredcows set_admin_level <int> §r- Set admin permission level.\n"
+                          + "§e/sacredcows set_player_damage_amount <double> §r- Set damage level"
+                          + " of 'damage' punishment mode.\n"
                           + "§e/sacredcows punishment_mode <death|damage|lightning_only> §r- Set"
-                          + " punishment mode\n"
-                          + "§e/sacredcows stats <player <name>> | global> §r- See stats for a"
-                          + " player or for the whole world"),
+                          + " punishment mode\n"),
               false);
     } else {
       ctx.getSource()
@@ -249,7 +352,7 @@ public class CowCommands {
 
     // == Booleans ==
     // Mod status
-    configMessage.append(Component.literal("\nMod status: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(Component.literal("\nMod Status: ").withStyle(ChatFormatting.GRAY));
     configMessage.append(status(config.isEnabled()));
     configMessage.append(changed(config.isEnabled(), properties.getProperty("settings.enabled")));
 
@@ -260,21 +363,45 @@ public class CowCommands {
         changed(config.isDebugEnabled(), properties.getProperty("settings.debug")));
 
     // Lightning status
-    configMessage.append(Component.literal("\nLightning: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(Component.literal("\nLightning Effect: ").withStyle(ChatFormatting.GRAY));
     configMessage.append(status(config.isLightningEffectEnabled()));
     configMessage.append(
         changed(
             config.isLightningEffectEnabled(),
             properties.getProperty("settings.lightning-effect")));
 
-    // Custom death message status
+    // Milk Teleportation status
     configMessage.append(
-        Component.literal("\nCustom Death Messages: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(status(config.isCustomDeathMessagesEnabled()));
+        Component.literal("\nMilk Teleportation: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(status(config.isTeleportEnabled()));
+    configMessage.append(
+        changed(config.isTeleportEnabled(), properties.getProperty("settings.teleport-enabled")));
+
+    // Cow Invincibility Status
+    configMessage.append(Component.literal("\nCow Invincibility: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(status(config.isCowInvincibilityEnabled()));
     configMessage.append(
         changed(
-            config.isCustomDeathMessagesEnabled(),
-            properties.getProperty("settings.custom-death-messages")));
+            config.isCowInvincibilityEnabled(),
+            properties.getProperty(SettingsEnum.COW_INVINCIBILITY.toLongString())));
+
+    // Cow Health Level
+    // configMessage.append(Component.literal("\nMax Cow Health: ").withStyle(ChatFormatting.GRAY));
+    // configMessage.append(String.valueOf(config.getCowHealth()));
+    // configMessage.append(
+    //     changed(
+    //        config.getCowHealth(),
+    //        properties.getProperty(SettingsEnum.COW_HEALTH.toLongString()))
+    //     );
+
+    // Player Damage Amount
+    configMessage.append(
+        Component.literal("\nPlayer Damage Amount: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(String.valueOf(config.getPlayerDamageAmount()));
+    configMessage.append(
+        changed(
+            config.getPlayerDamageAmount(),
+            properties.getProperty(SettingsEnum.PLAYER_DAMAGE_AMOUNT.toLongString())));
 
     // Scoreboard status
     configMessage.append(Component.literal("\nScoreboard: ").withStyle(ChatFormatting.GRAY));
@@ -296,16 +423,12 @@ public class CowCommands {
         changed(config.isTrackKillsEnabled(), properties.getProperty("scoreboard.track-kills")));
 
     // Bypass enable status
-    configMessage.append(Component.literal("\nBypass punishment: ").withStyle(ChatFormatting.GRAY));
+    configMessage.append(Component.literal("\nAdmin Bypass: ").withStyle(ChatFormatting.GRAY));
     configMessage.append(status(config.isAllowBypass()));
     configMessage.append(
         changed(config.isAllowBypass(), properties.getProperty("settings.allow-bypass")));
 
-    // == String values ==
-    List<String> deathMessages = config.getDeathMessages();
-    String formattedDeathMessages = String.join("\n   ", deathMessages);
-
-    // Punishment Type
+    // Punishment Mode
     configMessage.append(Component.literal("\nPunishment Mode: ").withStyle(ChatFormatting.GRAY));
     configMessage.append(config.getPunishmentMode().toString());
     configMessage.append(
@@ -313,60 +436,7 @@ public class CowCommands {
             config.getPunishmentMode().toString(),
             properties.getProperty("settings.punishment-mode")));
 
-    // Assault Objective
-    configMessage.append(Component.literal("\nAssault Objective: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getAssaultObjective());
-    configMessage.append(
-        changed(
-            config.getAssaultObjective(), properties.getProperty("scoreboard.assault-objective")));
-
-    // Kill Objective
-    configMessage.append(Component.literal("\nKill Objective: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getKillObjective());
-    configMessage.append(
-        changed(config.getKillObjective(), properties.getProperty("scoreboard.kill-objective")));
-
-    // Assault Display
-    configMessage.append(Component.literal("\nAssault Display: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getAssaultDisplay());
-    configMessage.append(
-        changed(config.getAssaultDisplay(), properties.getProperty("scoreboard.assault-display")));
-
-    // Kill Display
-    configMessage.append(Component.literal("\nKill Display: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getKillDisplay());
-    configMessage.append(
-        changed(config.getKillDisplay(), properties.getProperty("scoreboard.kill-display")));
-
-    // Bypass Permission
-    configMessage.append(Component.literal("\nBypass Permission: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getBypassPermission());
-    configMessage.append(
-        changed(
-            config.getBypassPermission(), properties.getProperty("permissions.bypass-permission")));
-
-    // Admin Permission
-    configMessage.append(Component.literal("\nAdmin Permission: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getAdminPermission());
-    configMessage.append(
-        changed(
-            config.getAdminPermission(), properties.getProperty("permissions.admin-permission")));
-
-    // Saved Death Messages
-    configMessage.append(
-        Component.literal("\nSaved Death Messages: \n").withStyle(ChatFormatting.GRAY));
-    configMessage.append("   " + formattedDeathMessages);
-    configMessage.append(
-        Component.literal(
-                "\n(You can only edit the list of death messages manually in the config file.)")
-            .withStyle(ChatFormatting.YELLOW));
-
     // == Other values ==
-    configMessage.append(Component.literal("\nDamage Amount: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(Component.literal(String.valueOf(config.getDamageAmount())));
-    configMessage.append(
-        changed(config.getDamageAmount(), properties.getProperty("settings.damage-amount")));
-
     configMessage.append(Component.literal("\nBypass OP Level: ").withStyle(ChatFormatting.GRAY));
     configMessage.append(Component.literal(String.valueOf(config.getBypassOpLevel())));
     configMessage.append(
@@ -377,22 +447,168 @@ public class CowCommands {
     configMessage.append(
         changed(config.getAdminOpLevel(), properties.getProperty("settings.admin-op-level")));
 
+    if (config.isDebugEnabled()) {
+      // Custom death message status
+      configMessage.append(
+          Component.literal("\nCustom Death Messages: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(status(config.isCustomDeathMessagesEnabled()));
+      configMessage.append(
+          changed(
+              config.isCustomDeathMessagesEnabled(),
+              properties.getProperty("settings.custom-death-messages")));
+
+      // == String values ==
+      List<String> deathMessages = config.getDeathMessages();
+      String formattedDeathMessages = String.join("\n   ", deathMessages);
+
+      // Assault Objective
+      configMessage.append(
+          Component.literal("\nAssault Objective: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(config.getAssaultObjective());
+      configMessage.append(
+          changed(
+              config.getAssaultObjective(),
+              properties.getProperty("scoreboard.assault-objective")));
+
+      // Kill Objective
+      configMessage.append(Component.literal("\nKill Objective: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(config.getKillObjective());
+      configMessage.append(
+          changed(config.getKillObjective(), properties.getProperty("scoreboard.kill-objective")));
+
+      // Assault Display
+      configMessage.append(Component.literal("\nAssault Display: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(config.getAssaultDisplay());
+      configMessage.append(
+          changed(
+              config.getAssaultDisplay(), properties.getProperty("scoreboard.assault-display")));
+
+      // Kill Display
+      configMessage.append(Component.literal("\nKill Display: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(config.getKillDisplay());
+      configMessage.append(
+          changed(config.getKillDisplay(), properties.getProperty("scoreboard.kill-display")));
+
+      // Bypass Permission
+      configMessage.append(
+          Component.literal("\nAdmin Bypass Permission: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(config.getBypassPermission());
+      configMessage.append(
+          changed(
+              config.getBypassPermission(),
+              properties.getProperty("permissions.bypass-permission")));
+
+      // Admin Permission
+      configMessage.append(
+          Component.literal("\nAdmin Permission: ").withStyle(ChatFormatting.GRAY));
+      configMessage.append(config.getAdminPermission());
+      configMessage.append(
+          changed(
+              config.getAdminPermission(), properties.getProperty("permissions.admin-permission")));
+
+      // Saved Death Messages
+      configMessage.append(
+          Component.literal("\nSaved Death Messages: \n").withStyle(ChatFormatting.GRAY));
+      configMessage.append("   " + formattedDeathMessages);
+      configMessage.append(
+          Component.literal(
+                  "\n(You can only edit the list of death messages manually in the config file.)")
+              .withStyle(ChatFormatting.YELLOW));
+    }
+
     ctx.getSource().sendSuccess(() -> configMessage, false);
     return 1;
+  }
+
+  private String boolToEnabled(boolean value) {
+    if (value) {
+      return "enabled";
+    } else {
+      return "disabled";
+    }
   }
 
   private int enableTeleport(CommandContext<CommandSourceStack> ctx) {
     boolean value = BoolArgumentType.getBool(ctx, "value");
     this.config.setTeleportEnabled(value);
-    String enabled = "";
-    if (value) {
-      enabled = "enabled";
-    } else {
-      enabled = "disabled";
-    }
+    String enabled = boolToEnabled(value);
     String message = "Milk teleportation " + enabled;
     ctx.getSource().sendSuccess(() -> Component.literal(message), false);
     displaySaveConfigMessage(ctx.getSource());
+    return 1;
+  }
+
+  private int executeCowInvincibilityEnabled(CommandContext<CommandSourceStack> ctx) {
+    boolean value = BoolArgumentType.getBool(ctx, "value");
+    this.config.setCowInvincibilityEnabled(value);
+    String enabled = boolToEnabled(value);
+    String message = "Cow invincibility " + enabled;
+    ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+    displaySaveConfigMessage(ctx.getSource());
+    return 1;
+  }
+
+  private int executeScoreboardEnabled(CommandContext<CommandSourceStack> ctx) {
+    boolean value = BoolArgumentType.getBool(ctx, "value");
+    this.config.setScoreboardEnabled(value);
+    String enabled = boolToEnabled(value);
+    String message = "Scoreboard " + enabled;
+    ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+    displaySaveConfigMessage(ctx.getSource());
+    return 1;
+  }
+
+  private int executeTrackAssaultsEnabled(CommandContext<CommandSourceStack> ctx) {
+    boolean value = BoolArgumentType.getBool(ctx, "value");
+    this.config.setTrackAssaultsEnabled(value);
+    String enabled = boolToEnabled(value);
+    String message = "Cow Assault Tracking " + enabled;
+    ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+    displaySaveConfigMessage(ctx.getSource());
+    return 1;
+  }
+
+  private int executeTrackKillsEnabled(CommandContext<CommandSourceStack> ctx) {
+    boolean value = BoolArgumentType.getBool(ctx, "value");
+    this.config.setTrackKillsEnabled(value);
+    String enabled = boolToEnabled(value);
+    String message = "Cow Kill Tracking " + enabled;
+    ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+    displaySaveConfigMessage(ctx.getSource());
+    return 1;
+  }
+
+  private int executeSetCowHealth(CommandContext<CommandSourceStack> ctx) {
+    double value = DoubleArgumentType.getDouble(ctx, "value");
+    this.config.setCowHealth(value);
+    ctx.getSource()
+        .sendSuccess(
+            () -> Component.literal("Set default cow health to: " + String.valueOf(value)), false);
+    return 1;
+  }
+
+  private int executeSetPlayerDamageAmount(CommandContext<CommandSourceStack> ctx) {
+    double value = DoubleArgumentType.getDouble(ctx, "value");
+    this.config.setPlayerDamageAmount(value);
+    ctx.getSource()
+        .sendSuccess(
+            () -> Component.literal("Set player punishment damage to: " + String.valueOf(value)),
+            false);
+    return 1;
+  }
+
+  private int executeSetBypassLevel(CommandContext<CommandSourceStack> ctx) {
+    int value = IntegerArgumentType.getInteger(ctx, "value");
+    this.config.setBypassOpLevel(value);
+    ctx.getSource()
+        .sendSuccess(() -> Component.literal("Set Punishment Bypass Level To: " + value), false);
+    return 1;
+  }
+
+  private int executeSetAdminLevel(CommandContext<CommandSourceStack> ctx) {
+    int value = IntegerArgumentType.getInteger(ctx, "value");
+    this.config.setAdminOpLevel(value);
+    ctx.getSource().sendSuccess(() -> Component.literal("Set Admin OP Level To: " + value), false);
     return 1;
   }
 
@@ -452,34 +668,34 @@ public class CowCommands {
     }
   }
 
-  private int executeBypass(CommandContext<CommandSourceStack> ctx) {
+  private int executeBypassEnabled(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
     boolean value = BoolArgumentType.getBool(ctx, "value");
-    this.config.setAllowBypass(value);
+    this.config.setBypassEnabled(value);
     source.sendSuccess(() -> Component.literal("bypass set to " + value), true);
     displaySaveConfigMessage(source);
     return 1;
   }
 
-  private int executeEnabled(CommandContext<CommandSourceStack> ctx) {
+  private int executeModEnabled(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
     boolean value = BoolArgumentType.getBool(ctx, "value");
-    this.config.setEnabled(value);
+    this.config.setModEnabled(value);
     source.sendSuccess(() -> Component.literal("enabled set to " + value), true);
     displaySaveConfigMessage(source);
     return 1;
   }
 
-  private int executeLightningEffect(CommandContext<CommandSourceStack> ctx) {
+  private int executeLightningEffectEnabled(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
     boolean value = BoolArgumentType.getBool(ctx, "value");
-    this.config.setLightningEffectEnabled(value);
+    this.config.setLightningModeEnabled(value);
     source.sendSuccess(() -> Component.literal("lightning_effect set to " + value), true);
     displaySaveConfigMessage(source);
     return 1;
   }
 
-  private int executePunishmentMode(CommandContext<CommandSourceStack> ctx) {
+  private int executeSetPunishmentMode(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
     PunishmentMode mode;
     try {
@@ -513,7 +729,7 @@ public class CowCommands {
         + " 'lightning-only' OR 'lightning_only'.";
   }
 
-  private int executeStatsPlayer(CommandContext<CommandSourceStack> ctx) {
+  private int executePrintPlayerStats(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
     String playerName = StringArgumentType.getString(ctx, "name");
     try {
@@ -552,7 +768,7 @@ public class CowCommands {
     return 1;
   }
 
-  private int executeStatsGlobal(CommandContext<CommandSourceStack> ctx) {
+  private int executePrintGlobalStats(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
