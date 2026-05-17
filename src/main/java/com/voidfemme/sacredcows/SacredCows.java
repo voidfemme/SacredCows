@@ -3,9 +3,11 @@ package com.voidfemme.sacredcows;
 import com.voidfemme.sacredcows.commands.CowCommands;
 import com.voidfemme.sacredcows.components.CowComponents;
 import com.voidfemme.sacredcows.config.CowConfig;
+import com.voidfemme.sacredcows.data.CowPositionsData;
 import com.voidfemme.sacredcows.features.CowChunkLoaderFeature;
 import com.voidfemme.sacredcows.features.CowProtectionFeature;
 import com.voidfemme.sacredcows.features.ScoreboardFeature;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -13,16 +15,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.level.storage.LevelResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SacredCows implements ModInitializer {
-  public static final String MOD_ID = "sacredcows.SacredCows";
-  private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SacredCows.class.getName());
   private static final int CLEANUP_INTERVAL_TICKS = 600; // 30 seconds
+  private static final int COW_INTERVAL_TICKS = 100; // 5 seconds
 
   private MinecraftServer server;
   private static SacredCows instance;
@@ -31,8 +38,14 @@ public class SacredCows implements ModInitializer {
   private CowProtectionFeature cowProtectionFeature;
   private ScoreboardFeature scoreboard;
   private CowChunkLoaderFeature cowChunkLoader;
+  private CowPositionsData cowPositionsData;
   private int cleanupTickCounter = 0;
+  private int cowTickCounter = 0;
   public long serverTickCounter = 0;
+
+  public final File getDataFolder() {
+    return server.getWorldPath(LevelResource.ROOT).resolve("sacredcows").toFile();
+  }
 
   @Override
   public void onInitialize() {
@@ -56,7 +69,7 @@ public class SacredCows implements ModInitializer {
 
     // Create the cowProtectionFeature - We will need to call the supplier after the fact
     this.cowProtectionFeature = new CowProtectionFeature(this, config);
-    this.cowChunkLoader = new CowChunkLoaderFeature();
+    this.cowChunkLoader = new CowChunkLoaderFeature(this);
 
     // Initialize CowComponents so the mixins work
     CowComponents.initialize();
@@ -70,6 +83,15 @@ public class SacredCows implements ModInitializer {
         server -> {
           this.server = server;
           scoreboard.setupScoreboard();
+
+          // Load chunks with named cows
+          for (ServerLevel level : server.getAllLevels()) {
+            for (Entity entity : level.getAllEntities()) {
+              if (entity instanceof Cow cow && cow.hasCustomName()) {
+                cowChunkLoader.updateCowLocation(cow, level);
+              }
+            }
+          }
         });
 
     // Set up server tick tracking
@@ -77,10 +99,41 @@ public class SacredCows implements ModInitializer {
         server -> {
           this.cleanupTickCounter += 1;
           this.serverTickCounter += 1;
+          this.cowTickCounter += 1;
           if (this.cleanupTickCounter >= CLEANUP_INTERVAL_TICKS) {
             this.cleanupTickCounter = 0;
             cowProtectionFeature.cleanupExpiredPunishments();
           }
+          // Update the cow's position in case the cow has moved since naming it
+          if (this.cowTickCounter >= COW_INTERVAL_TICKS) {
+            this.cowTickCounter = 0;
+            for (ServerLevel level : server.getAllLevels()) {
+              for (Entity entity : level.getAllEntities()) {
+                if (entity instanceof Cow cow && cow.hasCustomName()) {
+                  cowChunkLoader.updateCowLocation(cow, level);
+                }
+              }
+            }
+          }
+        });
+
+    // Make sure we handle cow deaths gracefully
+    ServerLivingEntityEvents.AFTER_DEATH.register(
+        (entity, damageSource) -> {
+          for (ServerLevel level : server.getAllLevels()) {
+            for (Entity loadedEntity : level.getAllEntities()) {
+              if (loadedEntity.equals(entity)) {
+                cowChunkLoader.onCowDeath(level);
+              }
+            }
+          }
+        });
+
+    // Save data for server restart
+    ServerLifecycleEvents.SERVER_STOPPING.register(
+        server -> {
+          this.server = server;
+          cowPositionsData.save();
         });
 
     cowProtectionFeature.registerAfterDeath();

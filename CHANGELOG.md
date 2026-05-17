@@ -5,9 +5,37 @@ All notable changes to CowMurder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2]
+
+### Added
+
+- Named cows now keep a 3x3 area of chunks around them force-loaded,
+  preventing the cow from wandering into unloaded chunks
+- Cow chunk positions are saved to disk on server stop and reloaded on
+  server start, so teleportation works across restarts
+- Cow chunk positions are updated every 100 ticks (5 sec.) to track
+  wandering cows
+- Named milk buckets now correctly tag stacked buckets with the cow's
+  UUID and display name
+
+### Changed
+
+- Cow invincibility is now configurable (default: off)
+- Config system refactored to use `SettingsEnum`, `ScoreboardEnum`, and
+  `PermissionsEnum` for type-safe property keys with comments and defaults
+- Commands renamed for consistency (`mod_enabled`, `bypass_enabled`, etc.)
+- Logger instances now use class-based names instead of hardcoded strings
+
+### Technical
+
+- Added `CowChunkLoaderFeature` for chunk management
+- Added `CowPositionsData` for persistent cow position storage via JSON
+- Added `data` package for world-persistent mod data
+
 ## [2.1.0] - 2025-10-02
 
 ### Changed
+
 - **Minecraft Compatibility**: Updated from 1.21.7 to 1.21.9
 - **Fabric Loader**: Bumped from 0.16.14 to 0.17.2
 - **Fabric API**: Updated from 0.129.0+1.21.7 to 0.134.0+1.21.9
@@ -15,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Permissions Handling**: Replaced legacy `isOperator()` check with proper `hasPermissionLevel()` to align with modern Fabric/Minecraft standards
 
 ### Technical
+
 - **Gradle**: Updated `processResources` task to use `providers.provider` for version expansion (removes deprecation warnings)
 - **Codebase**: Unified punishment logic by storing `ServerWorld` reference once per event
 - **Documentation**:
@@ -23,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Assets**: Added `icon.png` for mod metadata and README badge
 
 ### Compatibility
+
 - **Minecraft**: 1.21.9 only (no longer supports 1.21.7)
 - **Server Software**: Fabric Server with Fabric API
 - **Java**: Requires Java 21
@@ -30,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2025-07-12
 
 ### Added
+
 - **Paper API Support**: Migrated from Spigot to Paper API for enhanced performance and features
 - **Adventure Component API**: Modern rich text messaging system replacing legacy string-based messages
 - **Mojang Mappings**: Added official Mojang mappings support for better compatibility
@@ -37,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Command Aliases**: Added `/cm` alias for the main `/cowmurder` command
 
 ### Changed
+
 - **Minecraft Compatibility**: Updated from 1.21.4 to 1.21.7 support
 - **API Migration**: Replaced deprecated Spigot APIs with modern Paper equivalents
   - Updated `event.setDeathMessage()` to `event.deathMessage(Component)`
@@ -51,12 +83,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Code Quality**: Improved code formatting and structure throughout
 
 ### Fixed
+
 - **Gradle Deprecation Warnings**: Eliminated `FileTreeElement.getMode()` deprecation warning
 - **Build Compatibility**: Resolved plugin resolution issues with updated Shadow plugin coordinates
 - **API Deprecations**: Updated all deprecated method calls to modern equivalents
 
 ### Technical
-- **Dependency Updates**: 
+
+- **Dependency Updates**:
   - Migrated from Spigot API to Paper dev bundle
   - Updated Java toolchain configuration for Paper compatibility
   - Added Adventure API dependencies for rich text support
@@ -67,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Development Tools**: Updated wrapper and plugin versions for latest Gradle features
 
 ### Compatibility
+
 - **Minecraft**: Now supports 1.21.7 (up from 1.21.4)
 - **Server Software**: Paper, Spigot, and Paper-based forks
 - **Java**: Requires Java 21 (unchanged)
@@ -75,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2025-06-13
 
 ### Added
+
 - **Configuration System**: Comprehensive `config.yml` with customizable settings
   - Configurable punishment types: DEATH, DAMAGE, or LIGHTNING_ONLY
   - Customizable damage amounts for DAMAGE punishment type
@@ -101,6 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Option to completely disable scoreboard functionality
 
 ### Changed
+
 - **Updated Minecraft Compatibility**: Now supports Minecraft 1.21.4
 - **Improved Event Handling**: Replaced temporary event listeners with proper cleanup system
 - **Enhanced Error Handling**: Added try-catch blocks and null checks throughout
@@ -109,6 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Plugin.yml Updates**: Added command and permission definitions
 
 ### Fixed
+
 - **Memory Leak**: Eliminated memory leak from temporary event listeners that weren't properly cleaned up
 - **Null Pointer Exceptions**: Added comprehensive null checks for scoreboard operations
 - **Event Handler Cleanup**: Proper cleanup of event handlers to prevent resource leaks
@@ -116,6 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Configuration Loading**: Robust configuration loading with fallback defaults
 
 ### Technical
+
 - **Dependency Updates**: Updated Spigot API to 1.21.4-R0.1-SNAPSHOT
 - **Code Quality**: Added comprehensive error handling and logging
 - **Documentation**: Created detailed configuration documentation and examples
@@ -125,15 +164,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.3] - 2025-01-15
 
 ### Changed
+
 - Updated for Minecraft 1.21.1 compatibility
 - Updated Spigot API dependency to 1.21-R0.1-SNAPSHOT
 
 ### Technical
+
 - Updated README with new version compatibility information
 
 ## [1.0.2] - 2024-XX-XX
 
 ### Added
+
 - Initial release functionality
 - Basic cow protection mechanism
 - Hardcoded death messages
@@ -141,16 +183,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lightning effects on punishment
 
 ### Fixed
+
 - Various bug fixes and stability improvements
 
 ## [1.0.1] - 2024-XX-XX
 
 ### Fixed
+
 - Initial bug fixes and improvements
 
 ## [1.0.0] - 2024-XX-XX
 
 ### Added
+
 - Initial plugin release
 - Basic cow harm detection
 - Player punishment system
@@ -163,8 +208,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Release Notes Format
 
 ### Categories Used:
+
 - **Added** for new features
-- **Changed** for changes in existing functionality  
+- **Changed** for changes in existing functionality
 - **Deprecated** for soon-to-be removed features
 - **Removed** for now removed features
 - **Fixed** for any bug fixes
@@ -172,13 +218,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Technical** for developer-focused changes
 
 ### Version Numbering:
+
 This project follows [Semantic Versioning](https://semver.org/):
+
 - **MAJOR.MINOR.PATCH** (e.g., 1.1.0)
 - **MAJOR**: Breaking changes or major rewrites
 - **MINOR**: New features, backward compatible
 - **PATCH**: Bug fixes, backward compatible
 
 ### Links:
+
 - [Unreleased]: https://github.com/voidfemme/cow_murder/compare/v1.2.0...HEAD
 - [1.2.0]: https://github.com/voidfemme/cow_murder/compare/v1.1.0...v1.2.0
 - [1.1.0]: https://github.com/voidfemme/cow_murder/compare/v1.0.3...v1.1.0

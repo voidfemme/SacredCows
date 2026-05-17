@@ -9,8 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CowConfig {
-  public static final String MOD_ID = "sacredcows.config.CowConfig";
-  private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+  private static final Logger LOGGER = LoggerFactory.getLogger(CowConfig.class.getName());
   private final Path configFile;
   private final Properties properties = new Properties();
 

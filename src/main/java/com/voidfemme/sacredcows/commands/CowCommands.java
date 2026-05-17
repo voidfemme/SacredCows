@@ -31,8 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CowCommands {
-  public static final String MOD_ID = "sacredcows.cow_commands";
-  private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+  private static final Logger LOGGER = LoggerFactory.getLogger(CowCommands.class.getName());
   private final SacredCows owner;
   private final CowConfig config;
 

@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ScoreboardFeature {
-  private static final Logger LOGGER = LoggerFactory.getLogger("sacredcows");
+  private static final Logger LOGGER = LoggerFactory.getLogger(ScoreboardFeature.class.getName());
   private final SacredCows owner;
   private final CowConfig config;
 

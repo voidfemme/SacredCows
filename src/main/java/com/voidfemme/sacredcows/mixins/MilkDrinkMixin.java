@@ -15,6 +15,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Item.class)
 public class MilkDrinkMixin {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MilkDrinkMixin.class.getName());
 
   @Inject(method = "finishUsingItem", at = @At("HEAD"))
   private void onFinishUsing(
