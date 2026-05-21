@@ -43,6 +43,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build now compiles with `-Xlint:deprecation`
 - Bumped `mod_version` to `4.1.0`
 
+### Upgrade notes
+
+- **Chunk loading mechanism changed.** 4.0.2 and earlier used the world's
+  forced-chunks list (the one populated by `/forceload`) to keep named cows
+  loaded. 4.1.0 uses Fabric's ticket system instead, which doesn't persist to
+  disk. After upgrading, existing worlds may have leftover entries from
+  4.0.2 in their `/forceload query` output. These are harmless but can be
+  cleared with `/forceload remove <x> <z>` for each, or `/forceload remove all`
+  if you have no other manually-set forced chunks.
+
 ## [4.0.2]
 
 ### Added
