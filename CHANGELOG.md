@@ -5,6 +5,44 @@ All notable changes to CowMurder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0]
+
+### Changed
+
+- Chunk loading for named cows migrated from `setChunkForced` to a custom `TicketType` (`sacred_cows`) with `addTicketWithRadius` / `removeTicketWithRadius`, which is the API-appropriate path for forced chunk loading in 1.21.x and doesn't persist into the world's forced-chunks list
+- Permission level handling now uses the `PermissionLevel` enum throughout instead of raw `int`s, with parsing centralized in `CowConfig.getPermissionLevel()`. The reader accepts either an int id or an enum name and falls back to `GAMEMASTERS` on invalid input
+- `executeSetPunishmentMode` now returns a failure (status 0) with a user-facing error on invalid input instead of silently defaulting to `DEATH`
+- `/sacredcows config` now styles the current punishment mode in yellow to match the visual treatment of other config values, and normalizes case when comparing the in-memory value to the saved property so the "changed" indicator behaves correctly
+- Cow names in log messages and the death broadcast now use `getCustomName().getString()` instead of letting the raw `Component` stringify itself (which produced `literal{Bessie}` instead of `Bessie`)
+- Logging cleaned up across the mod: `System.err.println` calls in `CowConfig` replaced with `LOGGER.error`, hardcoded logger name in `CowProtectionFeature` replaced with the class name, and concatenated log strings converted to SLF4J parameterized format
+
+### Fixed
+
+- 3x3 chunk-loading radius around named cows actually covers a 3x3 area now; the previous implementation looped over `dx`/`dz` offsets but constructed `new ChunkPos(center.x(), center.z())` inside the loop, so it only ever added the center chunk nine times
+- `CowChunkLoaderFeature.onCowDeath` no longer registers a fresh `AFTER_DEATH` listener every time a cow dies — the listener is now registered once in `registerEventHandlers` and the cleanup logic is called directly. (This was a slow-growing listener leak: every named-cow death added another listener, and every existing listener fired on every subsequent death.)
+- Saved cow positions are now actually restored on server start. `CowChunkLoaderFeature` reads from the `CowPositionsData` singleton on `SERVER_STARTED` and re-adds chunk tickets for each persisted position before scanning live entities. The save path (`SERVER_STOPPING`) was already wired up; the load path had been missing
+- Named cows no longer leak chunk tickets as they wander. When a cow moves to a new chunk, the ticket on the previous chunk is now removed (this was dropped silently during the `setChunkForced` → ticket-API migration earlier in 4.0.3)
+- `CowConfig.save()` now writes permission levels as integer ids rather than `String.valueOf(enum)`, which was producing strings like `GAMEMASTERS` that the loader couldn't parse back. Configs with non-default `bypass-op-level` or `admin-op-level` were silently resetting to default on restart
+- `CowPositionsData.getInstance()` is now `static`, so it can actually be used as a singleton accessor
+- `CowConfig` constructor is now called with the real `configFile` path instead of `null` in `SacredCows.loadConfig`, so `save()`, `load()`, and `createDefaultConfig()` are no longer no-ops
+- Eliminated several redundant `AFTER_DEATH` registrations in `SacredCows.onInitialize` that duplicated work already done inside feature classes
+
+### Removed
+
+- `CowConfig.setDefaultProperties()` — unreachable; `createDefaultConfig()` writes defaults directly via the enum iterators
+- `SacredCows.getVersion()` and the `/version.properties` read it depended on — unused
+- `cleanupTickCounter`, `cowTickCounter`, and the public `serverTickCounter` field on `SacredCows`, along with the inline tick-dispatch loop in `onInitialize`
+
+### Technical
+
+- Tick-driven work centralized in a new `util.TickCounter` class that exposes `registerIntervalCallback(intervalTicks, Runnable)`; `CowProtectionFeature` and `CowChunkLoaderFeature` now register their periodic work through it instead of `SacredCows` owning the tick loop
+- `CowProtectionFeature` and `CowChunkLoaderFeature` take a `TickCounter` via constructor injection
+- `ScoreboardFeature` now owns its own `SERVER_STARTED` registration via `registerEventHandlers()` instead of being called inline from `SacredCows`
+- `CowChunkLoaderFeature` owns its own `SERVER_STARTED`, `ENTITY_LOAD`, `AFTER_DEATH`, and `SERVER_STOPPING` registrations in one place
+- `instanceof` pattern variables adopted in `CowProtectionFeature.getPlayerFromDamageSource` (`projectile instanceof Projectile proj`, `projectile instanceof TraceableEntity ownable`)
+- Build now compiles with `-Xlint:deprecation`
+- Bumped `mod_version` to `4.1.0`
+
 ## [4.0.2]
 
 ### Added

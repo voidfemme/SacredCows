@@ -2,6 +2,7 @@ package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
 import com.voidfemme.sacredcows.config.CowConfig;
+import com.voidfemme.sacredcows.util.TickCounter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -17,23 +18,25 @@ import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CowProtectionFeature {
   public static final String MOD_ID = "sacredcows.features.CowProtectionFeature";
-  private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-  private static final long PUNISHMENT_EXPIRE_TICKS = 200; // 10 sec
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(CowProtectionFeature.class.getName());
+  private static final long PUNISHMENT_EXPIRY_TICKS = 200; // 10 seconds
   private final Map<UUID, PendingPunishment> pendingPunishments = new ConcurrentHashMap<>();
   private final SacredCows owner;
   private final CowConfig config;
+  private final TickCounter tickCounter;
   private final Random random = new Random();
 
-  public CowProtectionFeature(SacredCows owner, CowConfig config) {
+  public CowProtectionFeature(SacredCows owner, CowConfig config, TickCounter tickCounter) {
     this.owner = owner;
     this.config = config;
+    this.tickCounter = tickCounter;
   }
 
   public enum PunishmentMode {
@@ -61,19 +64,19 @@ public class CowProtectionFeature {
 
     PendingPunishment(String deathMessage) {
       this.deathMessage = deathMessage;
-      this.creationTick = owner.serverTickCounter;
+      this.creationTick = tickCounter.getServerTickCounter();
     }
   }
 
   public void cleanupExpiredPunishments() {
-    long currentTick = owner.serverTickCounter;
+    long currentTick = tickCounter.getServerTickCounter();
 
     pendingPunishments
         .entrySet()
         .removeIf(
             entry -> {
               boolean expired =
-                  (currentTick - entry.getValue().creationTick) > PUNISHMENT_EXPIRE_TICKS;
+                  (currentTick - entry.getValue().creationTick) > PUNISHMENT_EXPIRY_TICKS;
               if (expired && config.isDebugEnabled()) {
                 LOGGER.info("Cleaned up expired punishment for player UUID: {}", entry.getKey());
               }
@@ -82,6 +85,8 @@ public class CowProtectionFeature {
   }
 
   public void registerEventHandlers() {
+    tickCounter.registerIntervalCallback(
+        TickCounter.CLEANUP_INTERVAL_TICKS, this::cleanupExpiredPunishments);
     // Handle entity damage
     ServerLivingEntityEvents.ALLOW_DAMAGE.register(
         (entity, source, amount) -> {
@@ -97,7 +102,7 @@ public class CowProtectionFeature {
           // Get the permission level of the player
           if (player.permissions() instanceof LevelBasedPermissionSet leveled) {
             PermissionLevel playerlevel = leveled.level();
-            PermissionLevel requiredLevel = PermissionLevel.byId(config.getBypassOpLevel());
+            PermissionLevel requiredLevel = config.getBypassOpLevel();
 
             // Now what can you do with level?
             // Check if player has bypass permission (configurable OP level)
@@ -133,24 +138,28 @@ public class CowProtectionFeature {
     // Handle entity death for kill tracking
     ServerLivingEntityEvents.AFTER_DEATH.register(
         (entity, source) -> {
-          // If config is not enabled, return without doing anything
           if (!config.isEnabled()) return;
-
-          // If the entity is not a cow, return without doing anything
-          if (!(entity instanceof Cow cow)) return;
-
-          // Unforce the chunk when a named cow dies
-          if (cow.hasCustomName() && entity.level() instanceof ServerLevel serverLevel) {
-            ChunkPos chunkPos = ChunkPos.containing(cow.blockPosition());
-            serverLevel.setChunkForced(chunkPos.getBlockX(0), chunkPos.getBlockZ(0), false);
-          }
-
-          // If we are not tracking kills, return without doing anything
+          if (!(entity instanceof Cow)) return;
           if (!config.isTrackKillsEnabled()) return;
 
           ServerPlayer player = getPlayerFromDamageSource(source);
           if (player != null) {
             owner.getScoreboard().trackKill(player, config);
+          }
+        });
+
+    ServerLivingEntityEvents.AFTER_DEATH.register(
+        (entity, source) -> {
+          if (!config.isEnabled()) return;
+          if (!(entity instanceof ServerPlayer player)) return;
+          if (!owner.getConfig().isCustomDeathMessagesEnabled()) return;
+
+          String customMessage = getPendingDeathMessage(player.getUUID());
+          if (customMessage != null) {
+            owner
+                .getServer()
+                .getPlayerList()
+                .broadcastSystemMessage(Component.literal(customMessage), false);
           }
         });
   }
@@ -234,39 +243,20 @@ public class CowProtectionFeature {
       Entity projectile = source.getDirectEntity();
 
       // Check if it's a projectile entity with an owner
-      if (projectile instanceof Projectile) {
-        Projectile proj = (Projectile) projectile;
+      if (projectile instanceof Projectile proj) {
         if (proj.getOwner() instanceof ServerPlayer) {
           return (ServerPlayer) proj.getOwner();
         }
       }
 
       // Some projectiles might extend different classes, check for Ownable interface
-      if (projectile instanceof TraceableEntity) {
-        TraceableEntity ownable = (TraceableEntity) projectile;
+      if (projectile instanceof TraceableEntity ownable) {
         if (ownable.getOwner() instanceof ServerPlayer) {
           return (ServerPlayer) ownable.getOwner();
         }
       }
     }
     return null;
-  }
-
-  public void registerAfterDeath() {
-    ServerLivingEntityEvents.AFTER_DEATH.register(
-        (entity, damageSource) -> {
-          if (entity instanceof ServerPlayer player) {
-            if (owner.getConfig().isCustomDeathMessagesEnabled()) {
-              String customMessage = getPendingDeathMessage(player.getUUID());
-              if (customMessage != null) {
-                owner
-                    .getServer()
-                    .getPlayerList()
-                    .broadcastSystemMessage(Component.literal(customMessage), false);
-              }
-            }
-          }
-        });
   }
 
   private String getRandomDeathMessage(String playerName) {

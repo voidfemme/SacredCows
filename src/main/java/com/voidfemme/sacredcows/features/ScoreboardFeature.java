@@ -2,6 +2,7 @@ package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
 import com.voidfemme.sacredcows.config.CowConfig;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.Objective;
@@ -61,6 +62,13 @@ public class ScoreboardFeature {
     } catch (Exception e) {
       LOGGER.warn("Failed to setup scoreboard: {}", e.getMessage());
     }
+  }
+
+  public void registerEventHandlers() {
+    ServerLifecycleEvents.SERVER_STARTED.register(
+        server -> {
+          setupScoreboard();
+        });
   }
 
   public void trackAssault(ServerPlayer player, CowConfig config) {

@@ -5,6 +5,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import net.minecraft.server.permissions.PermissionLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +25,8 @@ public class CowConfig {
   private boolean cowInvincibility = false;
   private double cowHealth = 20.0;
   private boolean bypassEnabled = true;
-  private int bypassOpLevel = 2;
-  private int adminOpLevel = 2;
+  private PermissionLevel bypassOpLevel = PermissionLevel.GAMEMASTERS;
+  private PermissionLevel adminOpLevel = PermissionLevel.GAMEMASTERS;
 
   // Scoreboard settings
   private boolean scoreboardEnabled = true;
@@ -63,7 +64,7 @@ public class CowConfig {
       properties.load(input);
       parseProperties();
     } catch (IOException e) {
-      System.err.println("Error loading config file: " + e.getMessage());
+      LOGGER.error("Error loading config file: {}", e.getMessage());
       createDefaultConfig();
     }
   }
@@ -77,7 +78,7 @@ public class CowConfig {
     try (InputStream input = Files.newInputStream(configFile)) {
       properties.load(input);
     } catch (IOException e) {
-      System.err.println("Error loading config file: " + e.getMessage());
+      LOGGER.error("Error loading config file: {}", e.getMessage());
     }
     return properties;
   }
@@ -114,7 +115,7 @@ public class CowConfig {
       load();
       parseProperties();
     } catch (IOException e) {
-      System.err.println("Error creating default config file: " + e.getMessage());
+      LOGGER.error("Error creating default config file: {}", e.getMessage());
     }
   }
 
@@ -143,9 +144,9 @@ public class CowConfig {
     // properties.setProperSettingsEnum.ENUM.togs.custom-death-messages", "true");
     properties.setProperty(SettingsEnum.ALLOW_BYPASS.toLongString(), String.valueOf(bypassEnabled));
     properties.setProperty(
-        SettingsEnum.BYPASS_OP_LEVEL.toLongString(), String.valueOf(bypassOpLevel));
+        SettingsEnum.BYPASS_OP_LEVEL.toLongString(), String.valueOf(bypassOpLevel.id()));
     properties.setProperty(
-        SettingsEnum.ADMIN_OP_LEVEL.toLongString(), String.valueOf(adminOpLevel));
+        SettingsEnum.ADMIN_OP_LEVEL.toLongString(), String.valueOf(adminOpLevel.id()));
 
     // Scoreboard Settings
     properties.setProperty(
@@ -174,28 +175,6 @@ public class CowConfig {
     }
   }
 
-  private void setDefaultProperties() {
-    // General Settings
-    for (SettingsEnum key : SettingsEnum.values()) {
-      properties.setProperty(key.toLongString(), key.getDefault());
-    }
-
-    // Scoreboard Settings
-    for (ScoreboardEnum key : ScoreboardEnum.values()) {
-      properties.setProperty(key.toLongString(), key.getDefault());
-    }
-
-    // Permissions
-    for (PermissionsEnum key : PermissionsEnum.values()) {
-      properties.setProperty(key.toLongString(), key.getDefault());
-    }
-
-    // Death Messages
-    for (int i = 0; i < deathMessages.size(); i++) {
-      properties.setProperty("death-messages." + i, deathMessages.get(i));
-    }
-  }
-
   private String get(CowConfigKeys key) {
     return properties.getProperty(key.toLongString(), key.getDefault());
   }
@@ -214,6 +193,24 @@ public class CowConfig {
     }
   }
 
+  private PermissionLevel getPermissionLevel(CowConfigKeys key) {
+    String raw = get(key);
+    try {
+      return PermissionLevel.byId(Integer.parseInt(raw));
+    } catch (NumberFormatException e) {
+    }
+    try {
+      return PermissionLevel.valueOf(raw);
+    } catch (IllegalArgumentException e) {
+      LOGGER.warn(
+          "Invalid permission level for '{}' (got '{}'), defaulting to {}",
+          key.toLongString(),
+          raw,
+          key.getDefault());
+    }
+    return PermissionLevel.GAMEMASTERS;
+  }
+
   private double getDouble(CowConfigKeys key) {
     try {
       return Double.parseDouble(get(key));
@@ -228,8 +225,8 @@ public class CowConfig {
     enabled = getBool(SettingsEnum.MOD_ENABLED);
     debugEnabled = getBool(SettingsEnum.DEBUG);
     playerDamageAmount = getDouble(SettingsEnum.PLAYER_DAMAGE_AMOUNT);
-    bypassOpLevel = getInt(SettingsEnum.BYPASS_OP_LEVEL);
-    adminOpLevel = getInt(SettingsEnum.ADMIN_OP_LEVEL);
+    bypassOpLevel = getPermissionLevel(SettingsEnum.BYPASS_OP_LEVEL);
+    adminOpLevel = getPermissionLevel(SettingsEnum.ADMIN_OP_LEVEL);
     lightningEffectEnabled = getBool(SettingsEnum.LIGHTNING_EFFECT);
     teleportEnabled = getBool(SettingsEnum.TELEPORT_ENABLED);
     cowInvincibility = getBool(SettingsEnum.COW_INVINCIBILITY);
@@ -324,12 +321,20 @@ public class CowConfig {
     return bypassEnabled;
   }
 
-  public int getBypassOpLevel() {
+  public PermissionLevel getBypassOpLevel() {
     return bypassOpLevel;
   }
 
-  public int getAdminOpLevel() {
+  public int getBypassOpLevelId() {
+    return bypassOpLevel.id();
+  }
+
+  public PermissionLevel getAdminOpLevel() {
     return adminOpLevel;
+  }
+
+  public int getAdminOpLevelId() {
+    return adminOpLevel.id();
   }
 
   public String getAssaultObjective() {
@@ -464,7 +469,7 @@ public class CowConfig {
   }
 
   public void setBypassOpLevel(int level, boolean apply) {
-    this.bypassOpLevel = level;
+    this.bypassOpLevel = PermissionLevel.byId(level);
     if (apply) {
       properties.setProperty(SettingsEnum.BYPASS_OP_LEVEL.toLongString(), String.valueOf(level));
     }
@@ -475,7 +480,7 @@ public class CowConfig {
   }
 
   public void setAdminOpLevel(int level, boolean apply) {
-    this.adminOpLevel = level;
+    this.adminOpLevel = PermissionLevel.byId(level);
     if (apply) {
       properties.setProperty(SettingsEnum.ADMIN_OP_LEVEL.toLongString(), String.valueOf(level));
     }

@@ -429,22 +429,23 @@ public class CowCommands {
 
     // Punishment Mode
     configMessage.append(Component.literal("\nPunishment Mode: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(config.getPunishmentMode().toString());
+    configMessage.append(
+        Component.literal(config.getPunishmentMode().toString()).withStyle(ChatFormatting.YELLOW));
     configMessage.append(
         changed(
             config.getPunishmentMode().toString(),
-            properties.getProperty("settings.punishment-mode")));
+            properties.getProperty("settings.punishment-mode").toLowerCase()));
 
     // == Other values ==
     configMessage.append(Component.literal("\nBypass OP Level: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(Component.literal(String.valueOf(config.getBypassOpLevel())));
+    configMessage.append(Component.literal(String.valueOf(config.getBypassOpLevelId())));
     configMessage.append(
-        changed(config.getBypassOpLevel(), properties.getProperty("settings.bypass-op-level")));
+        changed(config.getBypassOpLevelId(), properties.getProperty("settings.bypass-op-level")));
 
     configMessage.append(Component.literal("\nAdmin OP Level: ").withStyle(ChatFormatting.GRAY));
-    configMessage.append(Component.literal(String.valueOf(config.getAdminOpLevel())));
+    configMessage.append(Component.literal(String.valueOf(config.getAdminOpLevelId())));
     configMessage.append(
-        changed(config.getAdminOpLevel(), properties.getProperty("settings.admin-op-level")));
+        changed(config.getAdminOpLevelId(), properties.getProperty("settings.admin-op-level")));
 
     if (config.isDebugEnabled()) {
       // Custom death message status
@@ -577,6 +578,7 @@ public class CowCommands {
     return 1;
   }
 
+  // TODO: re-enable with command registration after implementation
   private int executeSetCowHealth(CommandContext<CommandSourceStack> ctx) {
     double value = DoubleArgumentType.getDouble(ctx, "value");
     this.config.setCowHealth(value);
@@ -623,13 +625,7 @@ public class CowCommands {
     CommandSourceStack source = ctx.getSource();
     boolean value = BoolArgumentType.getBool(ctx, "value");
     this.config.setDebugEnabled(value);
-    String enabled = "";
-    if (value) {
-      enabled = "enabled";
-    } else {
-      enabled = "disabled";
-    }
-    String message = "debug mode " + enabled;
+    String message = "debug mode " + boolToEnabled(value);
     source.sendSuccess(() -> Component.literal(message), true);
     displaySaveConfigMessage(source);
     return 1;
@@ -696,29 +692,20 @@ public class CowCommands {
 
   private int executeSetPunishmentMode(CommandContext<CommandSourceStack> ctx) {
     CommandSourceStack source = ctx.getSource();
-    PunishmentMode mode;
+    String value = StringArgumentType.getString(ctx, "value");
     try {
-      String value = StringArgumentType.getString(ctx, "value");
-      mode = PunishmentMode.fromString(value);
+      PunishmentMode mode = PunishmentMode.fromString(value);
+      this.config.setPunishmentMode(mode);
+      source.sendSuccess(
+          () -> Component.literal("punishment-mode set to " + mode.toString().toLowerCase()), true);
+      displaySaveConfigMessage(source);
+      return 1;
+
     } catch (IllegalArgumentException e) {
       LOGGER.warn(invalidPunishmentModeMessage(e.getMessage()));
-      mode = PunishmentMode.DEATH;
-    }
-    final PunishmentMode resolvedMode = mode;
-
-    // Suggestions don't enforce - validate here.
-    if (!mode.equals(PunishmentMode.DEATH)
-        && !mode.equals(PunishmentMode.DAMAGE)
-        && !mode.equals(PunishmentMode.LIGHTNING_ONLY)) {
-      ctx.getSource().sendFailure(Component.literal(invalidPunishmentModeMessage(mode.toString())));
+      source.sendFailure(Component.literal(invalidPunishmentModeMessage(value)));
       return 0;
     }
-    this.config.setPunishmentMode(mode);
-    source.sendSuccess(
-        () -> Component.literal("punishment-mode set to " + resolvedMode.toString().toLowerCase()),
-        true);
-    displaySaveConfigMessage(source);
-    return 1;
   }
 
   public String invalidPunishmentModeMessage(String mode) {

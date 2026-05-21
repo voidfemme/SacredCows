@@ -16,7 +16,7 @@ public class CowPositionsData {
   private static final Logger LOGGER = LoggerFactory.getLogger(CowPositionsData.class.getName());
   private static final String DATAFILE = "sacredcows_cows.json";
   private final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-  private final Map<UUID, ChunkPos> cowPositions = new HashMap<>();
+  private Map<UUID, ChunkPos> cowPositions = new HashMap<>();
   private static CowPositionsData instance;
 
   // private CowConfig config; <- TODO: Use config to determine a custom path
@@ -31,12 +31,16 @@ public class CowPositionsData {
   // in SacredCows.java: `Path dataFile =
   // server.getWorldPath(LevelResource.ROOT).resolve("sacredcows_cows.json");`
 
-  public CowPositionsData getInstance() {
+  public static CowPositionsData getInstance() {
     if (instance == null) {
       instance = new CowPositionsData();
       instance.load();
     }
     return instance;
+  }
+
+  public void setCowPositions(Map<UUID, ChunkPos> cowPositions) {
+    this.cowPositions = cowPositions;
   }
 
   public CowPositionsData load() {

@@ -67,6 +67,10 @@ processResources {
     }
 }
 
+compileJava {
+    options.compilerArgs << '-Xlint:deprecation'
+}
+
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     if (JavaVersion.current() < javaVersion) {
