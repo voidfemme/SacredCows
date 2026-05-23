@@ -4,7 +4,6 @@ import com.voidfemme.sacredcows.SacredCows;
 import com.voidfemme.sacredcows.components.CowComponents;
 import com.voidfemme.sacredcows.config.CowConfig;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.animal.cow.AbstractCow;
@@ -40,9 +39,7 @@ public class CowMilkMixin {
 
     if (player.level().isClientSide()) return;
 
-    if (config.isTeleportEnabled()) {
-      ServerLevel serverLevel = (ServerLevel) player.level();
-      // Code here: player and hand are available
+    if (config.teleport.get()) {
       Cow cow = (Cow) (Object) this;
       ItemStack stack = player.getItemInHand(hand);
 

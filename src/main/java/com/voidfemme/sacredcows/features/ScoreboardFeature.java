@@ -23,38 +23,38 @@ public class ScoreboardFeature {
   }
 
   public void setupScoreboard() {
-    if (!config.isScoreboardEnabled()) return;
+    if (!config.scoreboardEnabled.get()) return;
 
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
 
-      if (config.isTrackAssaultsEnabled()) {
-        String assaultObjective = config.getAssaultObjective();
+      if (config.trackAssaults.get()) {
+        String assaultObjective = config.assaultObjective.get();
         if (scoreboard.getObjective(assaultObjective) == null) {
           scoreboard.addObjective(
               assaultObjective,
               ObjectiveCriteria.DUMMY,
-              Component.literal(config.getAssaultDisplay()),
+              Component.literal(config.assaultDisplay.get()),
               ObjectiveCriteria.RenderType.INTEGER,
               false,
               null);
-          if (config.isDebugEnabled()) {
+          if (config.debugMode.get()) {
             LOGGER.info("Created assault scoreboard objective: {}", assaultObjective);
           }
         }
       }
 
-      if (config.isTrackKillsEnabled()) {
-        String killObjective = config.getKillObjective();
+      if (config.trackKills.get()) {
+        String killObjective = config.killObjective.get();
         if (scoreboard.getObjective(killObjective) == null) {
           scoreboard.addObjective(
               killObjective,
               ObjectiveCriteria.DUMMY,
-              Component.literal(config.getKillDisplay()),
+              Component.literal(config.killDisplay.get()),
               ObjectiveCriteria.RenderType.INTEGER,
               false,
               null);
-          if (config.isDebugEnabled()) {
+          if (config.debugMode.get()) {
             LOGGER.info("Created kill scoreboard objective: {}", killObjective);
           }
         }
@@ -72,18 +72,18 @@ public class ScoreboardFeature {
   }
 
   public void trackAssault(ServerPlayer player, CowConfig config) {
-    if (!config.isScoreboardEnabled() || !config.isTrackAssaultsEnabled()) return;
+    if (!config.scoreboardEnabled.get() || !config.trackAssaults.get()) return;
 
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
-      Objective objective = scoreboard.getObjective(config.getAssaultObjective());
+      Objective objective = scoreboard.getObjective(config.assaultObjective.get());
 
       if (objective != null) {
         ScoreHolder scoreHolder = ScoreHolder.forNameOnly(player.getName().getString());
         int currentScore = scoreboard.getOrCreatePlayerScore(scoreHolder, objective).get();
         scoreboard.getOrCreatePlayerScore(scoreHolder, objective).set(currentScore + 1);
 
-        if (config.isDebugEnabled()) {
+        if (config.debugMode.get()) {
           LOGGER.info(
               "Tracked assault for {}, new score: {}",
               player.getName().getString(),
@@ -99,14 +99,14 @@ public class ScoreboardFeature {
   public void trackKill(ServerPlayer player, CowConfig config) {
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
-      Objective objective = scoreboard.getObjective(config.getKillObjective());
+      Objective objective = scoreboard.getObjective(config.killObjective.get());
 
       if (objective != null) {
         ScoreHolder scoreHolder = ScoreHolder.forNameOnly(player.getName().getString());
         int currentScore = scoreboard.getOrCreatePlayerScore(scoreHolder, objective).get();
         scoreboard.getOrCreatePlayerScore(scoreHolder, objective).set(currentScore + 1);
 
-        if (config.isDebugEnabled()) {
+        if (config.debugMode.get()) {
           LOGGER.info(
               "Tracked kill for {}, new score: {}", player.getName().getString(), currentScore + 1);
         }

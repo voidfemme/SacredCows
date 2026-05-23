@@ -24,20 +24,20 @@ earth. Punishes cow-assaulters and gives cow-friends special buffs!
 
 ## Commands
 
-| Command                                                       | Description                                          | Permission |
-| ------------------------------------------------------------- | ---------------------------------------------------- | ---------- |
-| `/sacredcows`                                                 | Show help                                            | Everyone   |
-| `/sacredcows help`                                            | Show help                                            | Everyone   |
-| `/sacredcows enabled <true\|false>`                           | Enable or disable the mod                            | Operator   |
-| `/sacredcows bypass <true\|false>`                            | Toggle admin bypass                                  | Operator   |
-| `/sacredcows debug <true\|false>`                             | Toggle debug logging                                 | Operator   |
-| `/sacredcows lightning_effect <true\|false>`                  | Toggle lightning visual                              | Operator   |
-| `/sacredcows punishment_type <death\|damage\|lightning_only>` | Set punishment type                                  | Operator   |
-| `/sacredcows print_config`                                    | Show current config with unsaved changes highlighted | Everyone   |
-| `/sacredcows save_config`                                     | Write current settings to file                       | Operator   |
-| `/sacredcows reload_config`                                   | Reload settings from file                            | Operator   |
-| `/sacredcows stats player <name>`                             | Show stats for a player                              | Everyone   |
-| `/sacredcows stats global`                                    | Show server-wide totals                              | Everyone   |
+| Command                             | Description                                          | Permission |
+| ----------------------------------- | ---------------------------------------------------- | ---------- |
+| `/sacredcows`                       | Show help                                            | Everyone   |
+| `/sacredcows help`                  | Show help                                            | Everyone   |
+| `/sacredcows toggle <setting>`      | Flip a boolean setting's current value               | Operator   |
+| `/sacredcows enable <setting>`      | Set a boolean setting to true                        | Operator   |
+| `/sacredcows disable <setting>`     | Set a boolean setting to false                       | Operator   |
+| `/sacredcows set <setting> <value>` | Set any setting to a specific value                  | Operator   |
+| `/sacredcows get <setting>`         | Show the current value of a setting                  | Operator   |
+| `/sacredcows stats player <name>`   | Show stats for a player                              | Everyone   |
+| `/sacredcows stats global`          | Show server-wide totals                              | Everyone   |
+| `/sacredcows config print`          | Show current config with unsaved changes highlighted | Operator   |
+| `/sacredcows config save`           | Write current settings to file                       | Operator   |
+| `/sacredcows config reload`         | Reload settings from file                            | Operator   |
 
 Admin commands require OP level 2 by default (configurable).
 
@@ -64,7 +64,7 @@ death-messages.0=%player% was moo-rdered for their bovine crimes
 death-messages.1=%player% faced divine bovine retribution
 ```
 
-Use `/sacredcows save_config` to persist changes made via commands. Changes take effect immediately without saving.
+Use `/sacredcows config save` to persist changes made via commands. Changes take effect immediately without saving.
 
 ## Compatibility
 

@@ -35,7 +35,7 @@ public class MilkDrinkMixin {
     if (level.isClientSide()) return;
 
     // teleport code here
-    if (config.isTeleportEnabled()) {
+    if (config.teleport.get()) {
       // Get player data
       if (!(entity instanceof ServerPlayer player)) return;
 

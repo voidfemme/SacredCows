@@ -38,6 +38,9 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // newer error_prone_annotations to shadow the older version pulled in by Gson
+    implementation "com.google.errorprone:error_prone_annotations:2.49.0"
 }
 
 def targetJavaVersion = 25
@@ -64,6 +67,7 @@ processResources {
         // If Javadoc is generated, this must be specified in that task too.
         it.options.encoding = "UTF-8"
         it.options.release = targetJavaVersion
+        options.compilerArgs += ['-Xlint:all', '-Werror']
     }
 }
 

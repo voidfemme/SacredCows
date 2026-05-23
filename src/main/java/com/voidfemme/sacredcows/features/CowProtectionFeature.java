@@ -50,8 +50,8 @@ public class CowProtectionFeature {
 
     public static PunishmentMode fromString(String s) {
       return switch (s.toLowerCase()) {
-        case "death", "kill" -> DEATH;
-        case "damage", "hurt" -> DAMAGE;
+        case "death" -> DEATH;
+        case "damage" -> DAMAGE;
         case "lightning_only", "lightning-only" -> LIGHTNING_ONLY;
         default -> throw new IllegalArgumentException("Unknown punishment: " + s);
       };
@@ -77,7 +77,7 @@ public class CowProtectionFeature {
             entry -> {
               boolean expired =
                   (currentTick - entry.getValue().creationTick) > PUNISHMENT_EXPIRY_TICKS;
-              if (expired && config.isDebugEnabled()) {
+              if (expired && config.debugMode.get()) {
                 LOGGER.info("Cleaned up expired punishment for player UUID: {}", entry.getKey());
               }
               return expired;
@@ -90,7 +90,7 @@ public class CowProtectionFeature {
     // Handle entity damage
     ServerLivingEntityEvents.ALLOW_DAMAGE.register(
         (entity, source, amount) -> {
-          if (!config.isEnabled()) return true;
+          if (!config.modStatus.get()) return true;
 
           // Check if entity is a cow
           if (!(entity instanceof Cow)) return true;
@@ -102,22 +102,22 @@ public class CowProtectionFeature {
           // Get the permission level of the player
           if (player.permissions() instanceof LevelBasedPermissionSet leveled) {
             PermissionLevel playerlevel = leveled.level();
-            PermissionLevel requiredLevel = config.getBypassOpLevel();
+            PermissionLevel requiredLevel = config.bypassOpLevel.get();
 
             // Now what can you do with level?
             // Check if player has bypass permission (configurable OP level)
-            if (config.isAllowBypass() && playerlevel.isEqualOrHigherThan(requiredLevel)) {
+            if (config.bypassEnabled.get() && playerlevel.isEqualOrHigherThan(requiredLevel)) {
               // Player has sufficient permissions
-              if (config.isDebugEnabled()) {
+              if (config.debugMode.get()) {
                 LOGGER.info(
                     "Player {} bypassed cow protection (OP level {} >= required {})",
                     player.getName().getString(),
                     playerlevel,
-                    config.getBypassOpLevel());
+                    config.bypassOpLevel.get());
               }
               return true;
             }
-            if (config.isDebugEnabled()) {
+            if (config.debugMode.get()) {
               LOGGER.info(
                   "Player {} attacked a cow, applying punishment (OP level: {})",
                   player.getName().getString(),
@@ -132,15 +132,15 @@ public class CowProtectionFeature {
           applyPunishment(player);
 
           // Cancel damage?
-          return !config.isCowInvincibilityEnabled();
+          return !config.cowInvincibility.get();
         });
 
     // Handle entity death for kill tracking
     ServerLivingEntityEvents.AFTER_DEATH.register(
         (entity, source) -> {
-          if (!config.isEnabled()) return;
+          if (!config.modStatus.get()) return;
           if (!(entity instanceof Cow)) return;
-          if (!config.isTrackKillsEnabled()) return;
+          if (!config.trackKills.get()) return;
 
           ServerPlayer player = getPlayerFromDamageSource(source);
           if (player != null) {
@@ -150,9 +150,9 @@ public class CowProtectionFeature {
 
     ServerLivingEntityEvents.AFTER_DEATH.register(
         (entity, source) -> {
-          if (!config.isEnabled()) return;
+          if (!config.modStatus.get()) return;
           if (!(entity instanceof ServerPlayer player)) return;
-          if (!owner.getConfig().isCustomDeathMessagesEnabled()) return;
+          if (!owner.getConfig().deathMessagesEnabled.get()) return;
 
           String customMessage = getPendingDeathMessage(player.getUUID());
           if (customMessage != null) {
@@ -165,11 +165,11 @@ public class CowProtectionFeature {
   }
 
   private void applyPunishment(ServerPlayer player) {
-    PunishmentMode punishmentMode = config.getPunishmentMode();
-    ServerLevel world = (ServerLevel) player.level();
+    PunishmentMode punishmentMode = config.punishment.get();
+    ServerLevel world = player.level();
 
     // Lightning effect
-    if (config.isLightningEffectEnabled()) {
+    if (config.lightningEffect.get()) {
       try {
         Vec3 pos = new Vec3(player.getX(), player.getY(), player.getZ());
         LightningBolt lightning = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
@@ -183,7 +183,7 @@ public class CowProtectionFeature {
     }
 
     // Prepare death message if needed
-    if (config.isCustomDeathMessagesEnabled()) {
+    if (config.deathMessagesEnabled.get()) {
       String deathMessage = getRandomDeathMessage(player.getName().getString());
       pendingPunishments.put(player.getUUID(), new PendingPunishment(deathMessage));
     }
@@ -193,7 +193,7 @@ public class CowProtectionFeature {
       case PunishmentMode.DEATH:
         try {
           player.hurtServer(world, player.damageSources().generic(), Float.MAX_VALUE);
-          if (config.isDebugEnabled()) {
+          if (config.debugMode.get()) {
             LOGGER.info("Applied death punishment to {}", player.getName().getString());
           }
         } catch (Exception e) {
@@ -203,9 +203,9 @@ public class CowProtectionFeature {
 
       case PunishmentMode.DAMAGE:
         try {
-          float damage = (float) config.getPlayerDamageAmount();
+          float damage = (float) config.playerDamageAmount.get();
           player.hurtServer(world, player.damageSources().generic(), damage);
-          if (config.isDebugEnabled()) {
+          if (config.debugMode.get()) {
             LOGGER.info("Applied {} damage to {}", damage, player.getName().getString());
           }
         } catch (Exception e) {
@@ -216,7 +216,7 @@ public class CowProtectionFeature {
 
       case PunishmentMode.LIGHTNING_ONLY:
         // Lightning effect already applied above
-        if (config.isDebugEnabled()) {
+        if (config.debugMode.get()) {
           LOGGER.info("Applied lightning-only punishment to {}", player.getName().getString());
         }
         break;

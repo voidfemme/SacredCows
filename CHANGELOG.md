@@ -5,6 +5,60 @@ All notable changes to CowMurder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0]
+
+### Breaking Changes
+
+- All per-setting commands have been removed in favor of a unified command
+  interface. Existing scripts will break. Old → new:
+  - `/sacredcows enabled <bool>` → `/sacredcows toggle mod_status` (or `enable`/`disable`)
+  - `/sacredcows bypass <bool>` → `/sacredcows toggle bypass_status`
+  - `/sacredcows debug <bool>` → `/sacredcows toggle debug_mode`
+  - `/sacredcows lightning_effect <bool>` → `/sacredcows toggle lightning_effect`
+  - `/sacredcows punishment_type <mode>` → `/sacredcows set punishment <mode>`
+  - `/sacredcows save_config` → `/sacredcows config save`
+  - `/sacredcows reload_config` → `/sacredcows config reload`
+  - `/sacredcows print_config` → `/sacredcows config print`
+- `PunishmentMode.fromString` no longer accepts the aliases `kill`, `hurt`. Use `death`, `damage`, `lightning_only` OR `lightning-only`.
+- `/sacredcows config print` now requires operator permission (previously
+  available to everyone).
+
+### Added
+
+- New unified command surface:
+  - `/sacredcows toggle <setting>` — flip a boolean setting
+  - `/sacredcows enable <setting>` / `disable <setting>` — set a boolean explicitly
+  - `/sacredcows set <setting> <value>` — set any setting to a value
+  - `/sacredcows get <setting>` — show a setting's current value
+  - `/sacredcows config <print|save|reload>` — config file operations
+- Tab completion for setting names on all of the above.
+- New `Setting` sealed interface hierarchy (`BoolSetting`, `IntSetting`,
+  `DoubleSetting`, `StringSetting`, `EnumSetting<E>`) that owns its own
+  parsing, serialization, and chat-display formatting.
+- Build now compiles with `-Xlint:all -Werror`.
+- Shadowed `error_prone_annotations` 2.49.0 to silence the older version
+  pulled in transitively by Gson.
+
+### Changed
+
+- Configuration is now driven by a single registry in `CowConfig` rather
+  than scattered fields and three parallel enums.
+- `/sacredcows config print` output now iterates settings generically and
+  marks unsaved changes uniformly, instead of hand-listing each one.
+
+### Removed
+
+- `SettingsEnum`, `ScoreboardEnum`, `PermissionsEnum`, and the
+  `CowConfigKeys` interface they implemented.
+- Dozens of per-setting getter/setter pairs on `CowConfig`. Callers now
+  access settings directly as fields (`config.modStatus.get()`, etc.).
+- Dead `MilkTeleportFeature` stub file.
+
+### Fixed
+
+- N/A (this release is structural; no user-visible bug fixes shipped on top
+  of the refactor).
+
 ## [4.1.0]
 
 ### Changed

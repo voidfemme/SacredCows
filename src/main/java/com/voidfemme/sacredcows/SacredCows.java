@@ -42,9 +42,9 @@ public class SacredCows implements ModInitializer {
     // Load configuration
     LOGGER.info("Loading configuration...");
     loadConfig();
-    LOGGER.info("Configuration loaded. Enabled: {}", config.isEnabled());
+    LOGGER.info("Configuration loaded. Enabled: {}", config.modStatus.serialize());
 
-    if (!config.isEnabled()) {
+    if (!config.modStatus.get()) {
       LOGGER.info("SacredCows is disabled via configuration.");
       return;
     }
@@ -74,7 +74,7 @@ public class SacredCows implements ModInitializer {
     tickCounter.registerEventHandlers();
 
     LOGGER.info("SacredCows mod initialized!");
-    if (config.isDebugEnabled()) {
+    if (config.debugMode.get()) {
       LOGGER.info("Debug mode is enabled.");
     }
   }
