@@ -1,6 +1,8 @@
 package com.voidfemme.sacredcows.config.settings;
 
+import java.util.Arrays;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -8,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class EnumSetting<E extends Enum<E>> implements Setting {
-  private static final Logger LOGGER = LoggerFactory.getLogger(StringSetting.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(EnumSetting.class.getName());
 
   private final String name;
   private final String serializationKey;
@@ -64,6 +66,14 @@ public final class EnumSetting<E extends Enum<E>> implements Setting {
   }
 
   @Override
+  public String displayName() {
+    return Arrays.stream(name.split("_"))
+        .filter(w -> !w.isEmpty())
+        .map(w -> Character.toUpperCase(w.charAt(0)) + w.substring(1))
+        .collect(Collectors.joining(" "));
+  }
+
+  @Override
   public String serializationKey() {
     return serializationKey;
   }
@@ -94,6 +104,11 @@ public final class EnumSetting<E extends Enum<E>> implements Setting {
   @Override
   public String defaultSerialized() {
     return defaultValue.toString();
+  }
+
+  @Override
+  public void resetToDefault() {
+    this.value = defaultValue;
   }
 
   @Override

@@ -11,7 +11,6 @@ import com.voidfemme.sacredcows.config.settings.BoolSetting;
 import com.voidfemme.sacredcows.config.settings.Setting;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.ChatFormatting;
@@ -20,6 +19,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerScoreEntry;
 import net.minecraft.world.scores.ScoreHolder;
@@ -43,14 +43,13 @@ public class CowCommands {
 
   private static SuggestionProvider<CommandSourceStack> buildSuggestions(
       Collection<String> suggestions) {
-    return (context, builder) -> {
-      for (String s : suggestions) builder.suggest(s);
-      return builder.buildFuture();
-    };
+    return (context, builder) -> SharedSuggestionProvider.suggest(suggestions, builder);
   }
 
+  // TODO: Add a debug flag for some commands.
+
   public void register() {
-    LOGGER.info("Registering /sacredcows command...");
+    LOGGER.info("sacredcows: Registering /sacredcows command...");
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
           dispatcher.register(
@@ -161,8 +160,19 @@ public class CowCommands {
   private int executeToggleSetting(CommandContext<CommandSourceStack> ctx) {
     String name = StringArgumentType.getString(ctx, "name");
     Setting setting = config.find(name).orElse(null);
+
+    if (setting == null) {
+      debugNotASetting(name);
+      ctx.getSource().sendFailure(Component.literal("Not a setting: " + name));
+      return 0;
+    }
+
     if (!(setting instanceof BoolSetting b)) {
-      ctx.getSource().sendFailure(Component.literal("Not a toggleable setting: " + name));
+      debugNotASetting(setting.displayName());
+      ctx.getSource()
+          .sendFailure(
+              Component.literal(
+                  "Not a boolean setting: " + setting.displayName() + "(" + name + ")"));
       return 0;
     }
 
@@ -175,17 +185,27 @@ public class CowCommands {
 
     b.set(!b.get());
 
-    successMessage(ctx.getSource(), Component.empty(), setUnset + name + ": ", b);
+    successMessage(ctx.getSource(), Component.empty(), setUnset + setting.displayName() + ": ", b);
     return 1;
   }
 
   private int executeEnableSetting(CommandContext<CommandSourceStack> ctx) {
     String name = StringArgumentType.getString(ctx, "name"); // Which setting are we enabling?
     Setting setting = config.find(name).orElse(null);
-    if (!(setting instanceof BoolSetting b)) {
-      ctx.getSource().sendFailure(Component.literal("Not a toggleable setting: " + name));
+
+    if (setting == null) {
+      debugNotASetting(name);
+      ctx.getSource().sendFailure(Component.literal("Not a setting: " + name));
       return 0;
     }
+
+    if (!(setting instanceof BoolSetting b)) {
+      debugNotASetting(setting.displayName());
+      ctx.getSource()
+          .sendFailure(Component.literal("Not a boolean setting: " + setting.displayName()));
+      return 0;
+    }
+
     b.set(true);
     successMessage(ctx.getSource(), Component.empty(), "Set " + name + ": ", setting);
     return 1;
@@ -194,10 +214,20 @@ public class CowCommands {
   private int executeDisableSetting(CommandContext<CommandSourceStack> ctx) {
     String name = StringArgumentType.getString(ctx, "name"); // Which setting are we enabling?
     Setting setting = config.find(name).orElse(null);
-    if (!(setting instanceof BoolSetting b)) {
-      ctx.getSource().sendFailure(Component.literal("Not a toggleable setting: " + name));
+
+    if (setting == null) {
+      debugNotASetting(name);
+      ctx.getSource().sendFailure(Component.literal("Not a setting: " + name));
       return 0;
     }
+
+    if (!(setting instanceof BoolSetting b)) {
+      debugNotASetting(setting.displayName());
+      ctx.getSource()
+          .sendFailure(Component.literal("Not a boolean setting: " + setting.displayName()));
+      return 0;
+    }
+
     b.set(false);
     successMessage(ctx.getSource(), Component.empty(), "Unset " + name + ": ", b);
     return 1;
@@ -207,13 +237,18 @@ public class CowCommands {
     String name = StringArgumentType.getString(ctx, "name");
     String value = StringArgumentType.getString(ctx, "value");
     Setting setting = config.find(name).orElse(null);
+
     if (setting == null) {
+      debugNotASetting(name);
       ctx.getSource().sendFailure(Component.literal("Unknown setting: " + name));
       return 0;
     }
+
     if (!setting.tryDeserialize(value)) {
+      debugNotASetting(setting.displayName());
       ctx.getSource()
-          .sendFailure(Component.literal(value + " is an invalid value for " + setting.name()));
+          .sendFailure(
+              Component.literal(value + " is an invalid value for " + setting.displayName()));
       return 0;
     }
     successMessage(ctx.getSource(), Component.empty(), "Set " + name + ": ", setting);
@@ -226,10 +261,11 @@ public class CowCommands {
 
     Setting setting = config.find(name).orElse(null);
     if (setting == null) {
+      debugNotASetting(name);
       source.sendFailure(Component.literal("Unknown setting: " + name));
       return 0;
     }
-    successMessage(ctx.getSource(), Component.empty(), name + ": " + setting.serialize(), setting);
+    successMessage(ctx.getSource(), Component.empty(), name + ": ", setting);
     return 1;
   }
 
@@ -237,38 +273,59 @@ public class CowCommands {
     CommandSourceStack source = ctx.getSource();
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
-      source.sendSuccess(
-          () -> Component.literal("=== Global Cow Stats ===").withStyle(ChatFormatting.GOLD),
-          false);
-      if (this.config.trackAssaults.get()) {
-        Objective assaults = scoreboard.getObjective(this.config.assaultObjective.get());
-        if (assaults != null) {
-          int cowAssaultsTotal =
-              scoreboard.listPlayerScores(assaults).stream()
-                  .mapToInt(PlayerScoreEntry::value)
-                  .sum();
+      if (this.config.scoreboardEnabled.get()) {
+        source.sendSuccess(
+            () -> Component.literal("=== Global Cow Stats ===").withStyle(ChatFormatting.GOLD),
+            false);
+        if (this.config.trackAssaults.get()) {
+          Objective assaults = scoreboard.getObjective(this.config.assaultObjective.get());
+          if (assaults != null) {
+            int cowAssaultsTotal =
+                scoreboard.listPlayerScores(assaults).stream()
+                    .mapToInt(PlayerScoreEntry::value)
+                    .sum();
+            source.sendSuccess(
+                () ->
+                    Component.literal("Total Cow Assaults: " + cowAssaultsTotal)
+                        .withStyle(ChatFormatting.YELLOW),
+                false);
+          }
+        } else {
           source.sendSuccess(
               () ->
-                  Component.literal("Total Cow Assaults: " + cowAssaultsTotal)
-                      .withStyle(ChatFormatting.YELLOW),
+                  Component.literal("Assault-tracking is currently disabled.")
+                      .withStyle(ChatFormatting.RED),
               false);
         }
-      }
-      if (this.config.trackKills.get()) {
-        Objective kills = scoreboard.getObjective(this.config.killObjective.get());
-        if (kills != null) {
-          int killScoreTotal =
-              scoreboard.listPlayerScores(kills).stream().mapToInt(PlayerScoreEntry::value).sum();
+        if (this.config.trackKills.get()) {
+          Objective kills = scoreboard.getObjective(this.config.killObjective.get());
+          if (kills != null) {
+            int killScoreTotal =
+                scoreboard.listPlayerScores(kills).stream().mapToInt(PlayerScoreEntry::value).sum();
+            source.sendSuccess(
+                () ->
+                    Component.literal("Total Cow Kills: " + killScoreTotal)
+                        .withStyle(ChatFormatting.YELLOW),
+                false);
+          }
+        } else {
           source.sendSuccess(
               () ->
-                  Component.literal("Total Cow Kills: " + killScoreTotal)
-                      .withStyle(ChatFormatting.YELLOW),
+                  Component.literal("Kill-tracking is currently disabled.")
+                      .withStyle(ChatFormatting.RED),
               false);
         }
+      } else {
+        source.sendSuccess(
+            () ->
+                Component.literal("Scoreboard is currently disabled.")
+                    .withStyle(ChatFormatting.RED),
+            false);
       }
     } catch (Exception e) {
+      LOGGER.warn("sacredcows: Error showing global stats", e);
       source.sendFailure(Component.literal("Error retrieving stats: " + e.getMessage()));
-      LOGGER.warn("Error showing global stats: {}", e.getMessage());
+      return 0;
     }
     return 1;
   }
@@ -278,44 +335,64 @@ public class CowCommands {
     String playerName = StringArgumentType.getString(ctx, "name");
     try {
       Scoreboard scoreboard = owner.getServer().getScoreboard();
-      source.sendSuccess(
-          () ->
-              Component.literal("=== Cow Stats for " + playerName + " ===")
-                  .withStyle(ChatFormatting.GOLD),
-          false);
-      if (this.config.trackAssaults.get()) {
-        Objective assaults = scoreboard.getObjective(this.config.assaultObjective.get());
-        if (assaults != null) {
-          ScoreHolder scoreHolder = ScoreHolder.forNameOnly(playerName);
-          int assaultScore = scoreboard.getOrCreatePlayerScore(scoreHolder, assaults).get();
-          successMessage(
-              source,
-              Component.empty(),
-              "Cow assaults: " + assaultScore,
-              this.config.trackAssaults);
+      if (this.config.scoreboardEnabled.get()) {
+        source.sendSuccess(
+            () ->
+                Component.literal("=== Cow Stats for " + playerName + " ===")
+                    .withStyle(ChatFormatting.GOLD),
+            false);
+        if (this.config.trackAssaults.get()) {
+          Objective assaults = scoreboard.getObjective(this.config.assaultObjective.get());
+          if (assaults != null) {
+            ScoreHolder scoreHolder = ScoreHolder.forNameOnly(playerName);
+            int assaultScore = scoreboard.getOrCreatePlayerScore(scoreHolder, assaults).get();
+            successMessage(
+                source,
+                Component.empty(),
+                "Cow assaults: " + assaultScore,
+                this.config.trackAssaults);
+          }
+        } else {
+          source.sendSuccess(
+              () ->
+                  Component.literal("Assault-tracking is currently disabled.")
+                      .withStyle(ChatFormatting.RED),
+              false);
         }
-      }
-      if (this.config.trackKills.get()) {
-        Objective kills = scoreboard.getObjective(this.config.killObjective.get());
-        if (kills != null) {
-          ScoreHolder scoreHolder = ScoreHolder.forNameOnly(playerName);
-          int killScore = scoreboard.getOrCreatePlayerScore(scoreHolder, kills).get();
-          successMessage(
-              source, Component.empty(), "Cow kills: " + killScore, this.config.trackKills);
+        if (this.config.trackKills.get()) {
+          Objective kills = scoreboard.getObjective(this.config.killObjective.get());
+          if (kills != null) {
+            ScoreHolder scoreHolder = ScoreHolder.forNameOnly(playerName);
+            int killScore = scoreboard.getOrCreatePlayerScore(scoreHolder, kills).get();
+            successMessage(
+                source, Component.empty(), "Cow kills: " + killScore, this.config.trackKills);
+          }
+        } else {
+          source.sendSuccess(
+              () ->
+                  Component.literal("Kill-tracking is currently disabled.")
+                      .withStyle(ChatFormatting.RED),
+              false);
         }
+      } else {
+        source.sendSuccess(
+            () ->
+                Component.literal("Scoreboard is currently disabled.")
+                    .withStyle(ChatFormatting.RED),
+            false);
       }
     } catch (Exception e) {
+      LOGGER.warn("sacredcows: Error showing stats for {}", playerName, e);
       source.sendFailure(Component.literal("Error retrieving stats: " + e.getMessage()));
-      LOGGER.warn("Error showing stats for {}: {}", playerName, e.getMessage());
+      return 0;
     }
+
     return 1;
   }
 
   private static boolean checkPermission(CowConfig config, CommandSourceStack source) {
     return Permissions.check(source, config.adminPermission.get(), config.adminOpLevel.get());
   }
-
-  // == COMMAND IMPLEMENTATIONS ==
 
   /** Prints help text listing all available subcommands. */
   private int executeHelp(CommandContext<CommandSourceStack> ctx) {
@@ -349,16 +426,21 @@ public class CowCommands {
     return 1;
   }
 
-  private Component changed(String current, String saved) {
-    if (saved == null || current.equals(saved)) return Component.literal("");
-    return Component.literal(" <- (changed)").withStyle(ChatFormatting.YELLOW);
-  }
+  private MutableComponent appendSetting(
+      MutableComponent messageComponent, Setting s, Properties properties) {
+    String saved = properties.getProperty(s.serializationKey());
+    String current = s.serialize();
 
-  private static String prettify(String name) {
-    return Arrays.stream(name.split("_"))
-        .filter(w -> !w.isEmpty())
-        .map(w -> Character.toUpperCase(w.charAt(0)) + w.substring(1))
-        .collect(Collectors.joining(" "));
+    if (saved == null || current.equals(saved)) {
+      messageComponent.append(Component.literal("\n" + s.displayName() + ": "));
+      messageComponent.append(s.status());
+      return messageComponent;
+    }
+    Style highlight = Style.EMPTY.withBold(true).withColor(ChatFormatting.AQUA);
+    messageComponent.append(Component.literal("\n" + s.displayName() + ": ").withStyle(highlight));
+    messageComponent.append(s.status().withStyle(highlight));
+    messageComponent.append(Component.literal(" <- (changed)").withStyle(highlight));
+    return messageComponent;
   }
 
   private int executePrintConfig(CommandContext<CommandSourceStack> ctx) {
@@ -370,10 +452,7 @@ public class CowCommands {
         Component.literal("== Current Configuration Status ==").withStyle(ChatFormatting.GOLD));
 
     for (Setting s : config.allSettings()) {
-      configMessage.append(
-          Component.literal("\n" + prettify(s.name()) + ": ").withStyle(ChatFormatting.GRAY));
-      configMessage.append(s.status());
-      configMessage.append(changed(s.serialize(), properties.getProperty(s.serializationKey())));
+      appendSetting(configMessage, s, properties);
     }
 
     // == String values ==
@@ -398,9 +477,10 @@ public class CowCommands {
     try {
       config.save();
       source.sendSuccess(
-          () -> Component.literal("Sacred Cows configuration saved successfully!"), false);
+          () -> Component.literal("sacredcows configuration saved successfully!"), false);
       return 1;
     } catch (IOException e) {
+      LOGGER.warn("sacredcows: configuration failed to save:", e);
       source.sendFailure(
           Component.literal("Sacred Cows Configuration failed to save: " + e.getMessage()));
     }
@@ -414,14 +494,32 @@ public class CowCommands {
       owner.getScoreboard().setupScoreboard();
       source.sendSuccess(
           () ->
-              Component.literal("SacredCows configuration reloaded successfully!")
+              Component.literal("sacredcows configuration reloaded successfully!")
                   .withStyle(ChatFormatting.GREEN),
           false);
       return 1;
     } catch (Exception e) {
+      LOGGER.warn("sacredcows: configuration failed to reload", e);
       source.sendFailure(Component.literal("§cFailed to reload configuration: " + e.getMessage()));
-      LOGGER.warn("Failed to reload config: {}", e.getMessage());
       return 0;
     }
+  }
+
+  private int executeResetDefaults(CommandContext<CommandSourceStack> ctx) {
+    CommandSourceStack source = ctx.getSource();
+    for (Setting s : config.allSettings()) {
+      s.resetToDefault();
+    }
+    source.sendSuccess(
+        () ->
+            Component.literal(
+                "Reset entire configuration to defaults.\n"
+                    + "Use '/sacredcows config save' to persist the changes."),
+        false);
+    return 1;
+  }
+
+  private void debugNotASetting(String settingName) {
+    LOGGER.warn("sacredcows: Setting '{}' is not a valid sacredcows setting.", settingName);
   }
 }

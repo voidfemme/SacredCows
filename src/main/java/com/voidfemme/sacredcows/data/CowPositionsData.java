@@ -3,6 +3,7 @@ package com.voidfemme.sacredcows.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.voidfemme.sacredcows.SacredCows;
+import com.voidfemme.sacredcows.config.CowConfig;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +18,8 @@ public class CowPositionsData {
   private static final String DATAFILE = "sacredcows_cows.json";
   private final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
   private Map<UUID, ChunkPos> cowPositions = new HashMap<>();
-  private static CowPositionsData instance;
+  private final SacredCows owner;
+  private final CowConfig config;
 
   // private CowConfig config; <- TODO: Use config to determine a custom path
 
@@ -31,12 +33,14 @@ public class CowPositionsData {
   // in SacredCows.java: `Path dataFile =
   // server.getWorldPath(LevelResource.ROOT).resolve("sacredcows_cows.json");`
 
-  public static CowPositionsData getInstance() {
-    if (instance == null) {
-      instance = new CowPositionsData();
-      instance.load();
-    }
-    return instance;
+  public CowPositionsData(SacredCows owner, CowConfig config) {
+    this.owner = owner;
+    this.config = config;
+    // Caller does:
+    // ```
+    // var cpd = new CowPositionsData(config);
+    // cpd.load();
+    // `
   }
 
   public void setCowPositions(Map<UUID, ChunkPos> cowPositions) {
@@ -90,9 +94,8 @@ public class CowPositionsData {
   }
 
   private Path getCowPositionsDir() {
-    SacredCows mod = SacredCows.getInstance();
-    if (mod != null) {
-      return mod.getDataFolder().toPath();
+    if (owner != null) {
+      return owner.getDataFolder().toPath();
     } else {
       // Running outside of the plugin (e.g. in tests) -> use a temp dir
       return Path.of(System.getProperty("java.io.tmpdir"), "sacredcows");

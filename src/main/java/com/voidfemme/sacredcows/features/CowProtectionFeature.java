@@ -33,7 +33,7 @@ public class CowProtectionFeature {
   private final TickCounter tickCounter;
   private final Random random = new Random();
 
-  public CowProtectionFeature(SacredCows owner, CowConfig config, TickCounter tickCounter) {
+  public CowProtectionFeature(SacredCows owner, TickCounter tickCounter, CowConfig config) {
     this.owner = owner;
     this.config = config;
     this.tickCounter = tickCounter;

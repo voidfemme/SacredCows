@@ -3,6 +3,7 @@ package com.voidfemme.sacredcows;
 import com.voidfemme.sacredcows.commands.CowCommands;
 import com.voidfemme.sacredcows.components.CowComponents;
 import com.voidfemme.sacredcows.config.CowConfig;
+import com.voidfemme.sacredcows.data.CowPositionsData;
 import com.voidfemme.sacredcows.features.CowChunkLoaderFeature;
 import com.voidfemme.sacredcows.features.CowProtectionFeature;
 import com.voidfemme.sacredcows.features.ScoreboardFeature;
@@ -29,6 +30,7 @@ public class SacredCows implements ModInitializer {
   private ScoreboardFeature scoreboard;
   private CowChunkLoaderFeature cowChunkLoader;
   private TickCounter tickCounter = new TickCounter();
+  private CowPositionsData cowPositionsData;
 
   public final File getDataFolder() {
     return server.getWorldPath(LevelResource.ROOT).resolve("sacredcows").toFile();
@@ -55,8 +57,10 @@ public class SacredCows implements ModInitializer {
     commands.register();
 
     // Create the cowProtectionFeature - We will need to call the supplier after the fact
-    this.cowProtectionFeature = new CowProtectionFeature(this, config, tickCounter);
-    this.cowChunkLoader = new CowChunkLoaderFeature(this, tickCounter);
+    this.cowPositionsData = new CowPositionsData(this, config);
+    cowPositionsData.load();
+    this.cowProtectionFeature = new CowProtectionFeature(this, tickCounter, config);
+    this.cowChunkLoader = new CowChunkLoaderFeature(this, tickCounter, cowPositionsData, config);
 
     // Initialize CowComponents so the mixins work
     CowComponents.initialize();

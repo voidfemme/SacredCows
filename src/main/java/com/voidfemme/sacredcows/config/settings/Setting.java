@@ -7,6 +7,9 @@ public sealed interface Setting
   /** Command-facing name, e.g. "mod_status" */
   String name();
 
+  /** Display name for minecraft chat */
+  String displayName();
+
   /** File-facing Properties key, e.g. "settings.enabled" */
   String serializationKey();
 
@@ -21,6 +24,9 @@ public sealed interface Setting
 
   /** The default value, also rendered as String for createDefaultConfig() */
   String defaultSerialized();
+
+  /** Resets the value to built-in default */
+  void resetToDefault();
 
   /** Current value rendered as a styled Component for display in chat. */
   MutableComponent status();

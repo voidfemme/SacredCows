@@ -1,5 +1,7 @@
 package com.voidfemme.sacredcows.config.settings;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -37,6 +39,14 @@ public final class StringSetting implements Setting {
   }
 
   @Override
+  public String displayName() {
+    return Arrays.stream(name.split("_"))
+        .filter(w -> !w.isEmpty())
+        .map(w -> Character.toUpperCase(w.charAt(0)) + w.substring(1))
+        .collect(Collectors.joining(" "));
+  }
+
+  @Override
   public String serializationKey() {
     return serializationKey;
   }
@@ -60,6 +70,11 @@ public final class StringSetting implements Setting {
   @Override
   public String defaultSerialized() {
     return defaultValue;
+  }
+
+  @Override
+  public void resetToDefault() {
+    this.value = defaultValue;
   }
 
   @Override

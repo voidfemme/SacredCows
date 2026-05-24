@@ -1,6 +1,7 @@
 package com.voidfemme.sacredcows.features;
 
 import com.voidfemme.sacredcows.SacredCows;
+import com.voidfemme.sacredcows.config.CowConfig;
 import com.voidfemme.sacredcows.data.CowPositionsData;
 import com.voidfemme.sacredcows.util.TickCounter;
 import java.util.Map;
@@ -27,14 +28,22 @@ public class CowChunkLoaderFeature {
   private final SacredCows owner;
   private Map<UUID, ChunkPos> cowPositions = new ConcurrentHashMap<>();
   private TickCounter tickCounter;
+  private final CowConfig config;
+  private final CowPositionsData cowPositionsData;
 
   // Chunk loading ticket
   private static TicketType COW_TICKET =
       Registry.register(BuiltInRegistries.TICKET_TYPE, "sacred_cows", new TicketType(0L, 14));
 
-  public CowChunkLoaderFeature(SacredCows owner, TickCounter tickCounter) {
+  public CowChunkLoaderFeature(
+      SacredCows owner,
+      TickCounter tickCounter,
+      CowPositionsData cowPositionsData,
+      CowConfig config) {
     this.owner = owner;
     this.tickCounter = tickCounter;
+    this.config = config;
+    this.cowPositionsData = cowPositionsData;
   }
 
   public void registerEventHandlers() {
@@ -44,7 +53,6 @@ public class CowChunkLoaderFeature {
     ServerLifecycleEvents.SERVER_STARTED.register(
         server -> {
           // Phase 1: get singleton (triggers load from JSON) and re-add tickets
-          CowPositionsData cowPositionsData = CowPositionsData.getInstance();
           Map<UUID, ChunkPos> persisted = cowPositionsData.getCowPositions();
 
           if (!persisted.isEmpty()) {
@@ -83,7 +91,10 @@ public class CowChunkLoaderFeature {
             source.getChunkSource().addTicketWithRadius(COW_TICKET, chunkPos, 1);
             // Make sure the Map gets updated
             cowPositions.put(cow.getUUID(), chunkPos);
-            LOGGER.info("Cow: {} has been added to cowPositions", cow.getCustomName().getString());
+            if (config.debugMode.get()) {
+              LOGGER.info(
+                  "Cow: {} has been added to cowPositions", cow.getCustomName().getString());
+            }
           }
         });
 
@@ -98,7 +109,6 @@ public class CowChunkLoaderFeature {
     // Save the cowPositions before shutting down the server
     ServerLifecycleEvents.SERVER_STOPPING.register(
         server -> {
-          CowPositionsData cowPositionsData = CowPositionsData.getInstance();
           cowPositionsData.setCowPositions(cowPositions);
           cowPositionsData.save();
         });
@@ -123,7 +133,10 @@ public class CowChunkLoaderFeature {
         ChunkPos currentChunk = ChunkPos.containing(cow.blockPosition());
         // If the current chunk is not the last chunk, the cow wandered.
         if (!currentChunk.equals(lastChunk)) {
-          LOGGER.info("Cow: {} has moved to a new chunk!", cow.getCustomName().getString());
+          if (config.debugMode.get()) {
+
+            LOGGER.info("Cow: {} has moved to a new chunk!", cow.getCustomName().getString());
+          }
           // Save new cow position
           cowPositions.put(cow.getUUID(), currentChunk);
           serverLevel.getChunkSource().addTicketWithRadius(COW_TICKET, currentChunk, 1);
@@ -134,9 +147,11 @@ public class CowChunkLoaderFeature {
         ChunkPos currentChunk = ChunkPos.containing(cow.blockPosition());
         // Add the named cow to the list of known positions.
         cowPositions.put(cow.getUUID(), currentChunk);
-        LOGGER.info("Cow: {} has been saved to cowPositions", cow.getCustomName().getString());
         serverLevel.getChunkSource().addTicketWithRadius(COW_TICKET, currentChunk, 1);
-        LOGGER.info("New chunk at ({}, {}) is force-loaded", currentChunk.x(), currentChunk.z());
+        if (config.debugMode.get()) {
+          LOGGER.info("Cow: {} has been saved to cowPositions", cow.getCustomName().getString());
+          LOGGER.info("New chunk at ({}, {}) is force-loaded", currentChunk.x(), currentChunk.z());
+        }
         return;
       }
     }
@@ -152,11 +167,13 @@ public class CowChunkLoaderFeature {
         cowPositions.remove(cow.getUUID());
         ChunkPos currentChunk = ChunkPos.containing(cow.blockPosition());
         serverLevel.getChunkSource().removeTicketWithRadius(COW_TICKET, currentChunk, 1);
-        LOGGER.info(
-            "Fallen cow: {} in chunk ({}, {}) has been removed from cowPositions",
-            cow.getCustomName().getString(),
-            currentChunk.x(),
-            currentChunk.z());
+        if (config.debugMode.get()) {
+          LOGGER.info(
+              "Fallen cow: {} in chunk ({}, {}) has been removed from cowPositions",
+              cow.getCustomName().getString(),
+              currentChunk.x(),
+              currentChunk.z());
+        }
         String customMessage = getCowDeathMessage(cow);
         owner
             .getServer()
