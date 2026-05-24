@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PunishmentMode.fromString` no longer accepts the aliases `kill`, `hurt`. Use `death`, `damage`, `lightning_only` OR `lightning-only`.
 - `/sacredcows config print` now requires operator permission (previously
   available to everyone).
+- `CowPositionsData` is no longer a singleton. The static `getInstance()`
+  factory has been removed; callers must now construct it with
+  `new CowPositionsData(owner, config)` and call `load()` explicitly.
+- `CowProtectionFeature` constructor parameter order changed from
+  `(SacredCows, CowConfig, TickCounter)` to `(SacredCows, TickCounter, CowConfig)`.
+- `CowChunkLoaderFeature` constructor now takes
+  `(SacredCows, TickCounter, CowPositionsData, CowConfig)` instead of
+  `(SacredCows, TickCounter)`.
 
 ### Added
 
@@ -35,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `Setting` sealed interface hierarchy (`BoolSetting`, `IntSetting`,
   `DoubleSetting`, `StringSetting`, `EnumSetting<E>`) that owns its own
   parsing, serialization, and chat-display formatting.
+- `/sacredcows stats` commands now report when the scoreboard or
+  individual assault/kill tracking is disabled, rather than silently
+  printing nothing.
 - Build now compiles with `-Xlint:all -Werror`.
 - Shadowed `error_prone_annotations` 2.49.0 to silence the older version
   pulled in transitively by Gson.
@@ -45,6 +56,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   than scattered fields and three parallel enums.
 - `/sacredcows config print` output now iterates settings generically and
   marks unsaved changes uniformly, instead of hand-listing each one.
+  Changed values are now highlighted in bold aqua with a `<- (changed)`
+  marker.
+- Verbose cow position/chunk tracking logs in `CowChunkLoaderFeature` are
+  now gated behind the `debug_mode` setting.
+- Log messages standardized with a `sacredcows:` prefix; exceptions are
+  now passed as `Throwable` arguments to the logger rather than
+  `.getMessage()`, preserving full stack traces.
+- Tab completion now uses `SharedSuggestionProvider.suggest` for proper
+  prefix filtering instead of suggesting every option unconditionally.
 
 ### Removed
 
@@ -56,8 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- N/A (this release is structural; no user-visible bug fixes shipped on top
-  of the refactor).
+- `EnumSetting` was using `StringSetting.class` for its SLF4J logger,
+  causing its log messages to be misattributed.
 
 ## [4.1.0]
 
