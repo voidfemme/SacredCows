@@ -58,7 +58,6 @@ public class SacredCows implements ModInitializer {
 
     // Create the cowProtectionFeature - We will need to call the supplier after the fact
     this.cowPositionsData = new CowPositionsData(this, config);
-    cowPositionsData.load();
     this.cowProtectionFeature = new CowProtectionFeature(this, tickCounter, config);
     this.cowChunkLoader = new CowChunkLoaderFeature(this, tickCounter, cowPositionsData, config);
 
@@ -69,6 +68,7 @@ public class SacredCows implements ModInitializer {
     ServerLifecycleEvents.SERVER_STARTED.register(
         server -> {
           this.server = server;
+          cowPositionsData.load();
         });
 
     // Register event handlers
