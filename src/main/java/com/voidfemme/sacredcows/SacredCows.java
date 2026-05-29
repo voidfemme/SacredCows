@@ -42,7 +42,7 @@ public class SacredCows implements ModInitializer {
     instance = this;
 
     // Load configuration
-    LOGGER.info("Loading configuration...");
+    LOGGER.info("Loading SacredCows configuration...");
     loadConfig();
     LOGGER.info("Configuration loaded. Enabled: {}", config.modStatus.serialize());
 

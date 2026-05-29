@@ -1,6 +1,9 @@
+import com.modrinth.minotaur.dependencies.ModDependency
+
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
+    id 'com.modrinth.minotaur' version '2.+'
 }
 
 version = project.mod_version
@@ -41,6 +44,21 @@ dependencies {
 
     // newer error_prone_annotations to shadow the older version pulled in by Gson
     implementation "com.google.errorprone:error_prone_annotations:2.49.0"
+}
+
+modrinth {
+    projectId = 'iI29uZEP'
+    versionNumber = project.mod_version
+    versionName = "SacredCows ${project.mod_version}"
+    versionType = 'release'
+    uploadFile = tasks.jar
+    gameVersions = ['26.1']
+    loaders = ['fabric']
+    changelog = rootProject.file("CHANGELOG_LATEST.md").text
+    dependencies = [
+        new ModDependency("P7dR8mSH", "required") // Fabric API
+    ]
+    syncBodyFrom = rootProject.file("README.md").text
 }
 
 def targetJavaVersion = 25

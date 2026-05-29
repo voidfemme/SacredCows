@@ -71,4 +71,6 @@ RELEASE.md
 LOST\?.md
 update_sendMessage.sh
 .factorypath
-MILKPORTING.MD
+MILKPORTING.md
+CHANGELOG_LATEST.md
+.envrc
