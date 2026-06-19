@@ -5,6 +5,15 @@ All notable changes to CowMurder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0]
+
+- Ported to the Chaos Cubed update. New versions of:
+  - minecraft_version -> 26.2 (**Chaos Cubed!**)
+  - loader_version -> 0.19.3
+  - fabric_version -> 0.152.0
+  - loom -> 1.17
+  - gradle -> 9.5.1
+
 ## [5.0.1]
 
 ### Fixed

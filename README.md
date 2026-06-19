@@ -68,8 +68,8 @@ Use `/sacredcows config save` to persist changes made via commands. Changes take
 
 ## Compatibility
 
-- **Minecraft**: 26.1
-- **Fabric Loader**: 0.18.6
+- **Minecraft**: 26.2
+- **Fabric Loader**: 0.19.3
 - **Java**: 25
 
 ## License
