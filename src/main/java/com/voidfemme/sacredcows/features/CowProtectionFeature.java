@@ -13,7 +13,7 @@ import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.animal.cow.Cow;
@@ -172,7 +172,7 @@ public class CowProtectionFeature {
     if (config.lightningEffect.get()) {
       try {
         Vec3 pos = new Vec3(player.getX(), player.getY(), player.getZ());
-        LightningBolt lightning = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
+        LightningBolt lightning = new LightningBolt(EntityTypes.LIGHTNING_BOLT, world);
         lightning.setPos(pos);
         // Make it cosmetic only - otherwise the cow dies too and that's not good praxis
         lightning.setVisualOnly(true);
