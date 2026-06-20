@@ -52,7 +52,7 @@ modrinth {
     versionName = "SacredCows ${project.mod_version}"
     versionType = 'release'
     uploadFile = tasks.jar
-    gameVersions = ['26.1']
+    gameVersions = ['26.2']
     loaders = ['fabric']
     changelog = rootProject.file("CHANGELOG_LATEST.md").text
     dependencies = [

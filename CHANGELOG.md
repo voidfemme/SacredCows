@@ -5,6 +5,36 @@ All notable changes to CowMurder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.1]
+
+**⚠️ Warning: This version removes the custom `sacredcows:cow_id` data component.**
+Milk buckets tagged by SacredCows 6.0.0 or earlier will lose their stored teleport
+target after updating, and depending on your Minecraft version may not survive being
+loaded at all. **Back up your world before updating.** There is no automatic migration:
+after updating, simply re-milk any named cows to mint fresh teleport buckets.
+
+If you ran this mod server-side only and your players were being kicked with a registry
+sync error ("registry entry sacredcows:cow_id is missing from local registry"), this
+release fixes that — the mod no longer adds anything to a synced registry and is once
+again safe to install on the server alone.
+
+### Changed
+
+- Cow teleport data is now stored inside vanilla `minecraft:custom_data` instead of a
+  dedicated `sacredcows:cow_id` data component. This removes the only modded entry in a
+  synchronized registry, so vanilla clients can connect to a server running SacredCows
+  without installing the mod themselves.
+
+### Removed
+
+- The `sacredcows:cow_id` `DataComponentType` and its registration. This was the cause of
+  the forced client-install / registry sync failure introduced in 6.0.0.
+
+### Migration
+
+- **None provided by design.** PRE-6.0.1 MILK BUCKETS ARE NOT CONVERTED. Back up first,
+  then re-milk named cows to recreate working teleport buckets.
+
 ## [6.0.0]
 
 - Ported to the Chaos Cubed update. New versions of:

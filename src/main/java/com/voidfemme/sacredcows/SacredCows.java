@@ -1,7 +1,6 @@
 package com.voidfemme.sacredcows;
 
 import com.voidfemme.sacredcows.commands.CowCommands;
-import com.voidfemme.sacredcows.components.CowComponents;
 import com.voidfemme.sacredcows.config.CowConfig;
 import com.voidfemme.sacredcows.data.CowPositionsData;
 import com.voidfemme.sacredcows.features.CowChunkLoaderFeature;
@@ -60,9 +59,6 @@ public class SacredCows implements ModInitializer {
     this.cowPositionsData = new CowPositionsData(this, config);
     this.cowProtectionFeature = new CowProtectionFeature(this, tickCounter, config);
     this.cowChunkLoader = new CowChunkLoaderFeature(this, tickCounter, cowPositionsData, config);
-
-    // Initialize CowComponents so the mixins work
-    CowComponents.initialize();
 
     // Setup server lifecycle events
     ServerLifecycleEvents.SERVER_STARTED.register(

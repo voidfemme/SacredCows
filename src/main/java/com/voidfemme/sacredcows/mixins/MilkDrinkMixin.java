@@ -1,9 +1,10 @@
 package com.voidfemme.sacredcows.mixins;
 
 import com.voidfemme.sacredcows.SacredCows;
-import com.voidfemme.sacredcows.components.CowComponents;
 import com.voidfemme.sacredcows.config.CowConfig;
+import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
@@ -26,6 +28,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MilkDrinkMixin {
   private static final Logger LOGGER = LoggerFactory.getLogger(MilkDrinkMixin.class.getName());
 
+  // Must match the key written in CowMilkMixin.
+  private static final String COW_ID_KEY = "sacredcows:cow_id";
+
   @Inject(method = "finishUsingItem", at = @At("HEAD"))
   private void onFinishUsing(
       ItemStack stack, Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> cir) {
@@ -39,8 +44,8 @@ public class MilkDrinkMixin {
       // Get player data
       if (!(entity instanceof ServerPlayer player)) return;
 
-      // Read uuid from milk bucket and find the cow.
-      UUID cowUuid = stack.get(CowComponents.COW_ID);
+      // Read uuid from milk bucket (stored in minecraft:custom_data) and find the cow.
+      UUID cowUuid = readCowId(stack);
       if (cowUuid == null) return;
 
       MinecraftServer server = ((ServerLevel) level).getServer();
@@ -67,6 +72,22 @@ public class MilkDrinkMixin {
               TeleportTransition.DO_NOTHING);
       player.setDeltaMovement(Vec3.ZERO);
       player.teleport(transition);
+    }
+  }
+
+  // Returns the stored cow UUID, or null if this bucket isn't tagged / the value is malformed.
+  private static UUID readCowId(ItemStack stack) {
+    CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+    if (data == null) return null;
+
+    Optional<String> idStr = data.copyTag().getString(COW_ID_KEY);
+    if (idStr.isEmpty()) return null;
+
+    try {
+      return UUID.fromString(idStr.get());
+    } catch (IllegalArgumentException e) {
+      LOGGER.warn("Milk bucket carried an unparseable {}: {}", COW_ID_KEY, idStr.get());
+      return null;
     }
   }
 }
