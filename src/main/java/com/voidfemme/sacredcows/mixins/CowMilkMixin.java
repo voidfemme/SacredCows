@@ -51,26 +51,17 @@ public class CowMilkMixin {
       // If it's a named cow, add the cow's Id to the bucket, and give the bucket a glint
       if (cow.hasCustomName()) {
         // If we have a stack of empty milk buckets, we need to name the new milk bucket
-        if (stack.count() > 1) {
-          // Iterate through the inventory
-          for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack slot = player.getInventory().getItem(i);
-            if (slot.is(Items.MILK_BUCKET) && !hasCowId(slot)) {
-              // This is the untagged milk bucket
-              // Give the bucket a unique name
-              slot.set(DataComponents.CUSTOM_NAME, cow.getCustomName());
-              // Save the Cow's UUID to the milk bucket
-              setCowId(slot, cow);
-              break;
-            }
+        // Iterate through the inventory
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+          ItemStack slot = player.getInventory().getItem(i);
+          if (slot.is(Items.MILK_BUCKET) && !hasCowId(slot)) {
+            // This is the untagged milk bucket
+            // Give the bucket a unique name
+            slot.set(DataComponents.CUSTOM_NAME, cow.getCustomName());
+            // Save the Cow's UUID to the milk bucket
+            setCowId(slot, cow);
+            break;
           }
-        } else {
-          // Just in case the single bucket case breaks:
-          // Give the bucket a unique name
-          stack.set(DataComponents.CUSTOM_NAME, cow.getCustomName());
-
-          // Save the Cow's UUID to the milk bucket
-          setCowId(stack, cow);
         }
       }
     }

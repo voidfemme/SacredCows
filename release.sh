@@ -44,7 +44,7 @@ if [ ! -s "$notes_file" ]; then
 fi
 
 # 4. Build the jar
-./gradlew clean build
+./gradlew clean build modrinth
 
 # 5. Verify the jar exists
 if [ ! -f "$jar_path" ]; then
