@@ -5,6 +5,11 @@ All notable changes to SacredCows will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.1.2]
+
+**Bump Version**: No other changes made except for an update to Minecraft 26.3,
+Fabric Loader version to 0.19.5
+
 ## [6.0.2]
 
 **Bugfix**: Empty buckets of stack size 2 would rename the empty bucket instead
